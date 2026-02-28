@@ -10,7 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { CheckCircle2, Plus, ThumbsUp, ThumbsDown, AlertCircle } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CheckCircle2, Plus, AlertCircle, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Profile, WorkEpisode, Subcategory, SentimentType } from '@/lib/supabase-types';
 
@@ -22,7 +23,6 @@ export default function FeedbackForm() {
   
   const [episodeId, setEpisodeId] = useState('');
   const [toUserId, setToUserId] = useState('');
-  const [sentiment, setSentiment] = useState<SentimentType | ''>('');
   const [selectedSubs, setSelectedSubs] = useState<string[]>([]);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -31,6 +31,10 @@ export default function FeedbackForm() {
   const [existingFeedbackId, setExistingFeedbackId] = useState<string | null>(null);
   const [isUpdate, setIsUpdate] = useState(false);
   
+  // Autocomplete state
+  const [userSearch, setUserSearch] = useState('');
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+
   // New episode dialog
   const [newEpOpen, setNewEpOpen] = useState(false);
   const [newEpTitle, setNewEpTitle] = useState('');
@@ -70,9 +74,7 @@ export default function FeedbackForm() {
     if (data) {
       setExistingFeedbackId(data.id);
       setIsUpdate(true);
-      setSentiment(data.sentiment as SentimentType);
       setComment(data.comment);
-      // Load existing subcategories
       const { data: subs } = await supabase
         .from('feedback_subcategories')
         .select('subcategory_id')
@@ -84,14 +86,19 @@ export default function FeedbackForm() {
     }
   }
 
-  const filteredSubs = useMemo(
-    () => subcategories.filter(s => sentiment && s.sentiment === sentiment),
-    [subcategories, sentiment]
-  );
-
   const otherUsers = useMemo(
     () => profiles.filter(p => p.id !== user?.id),
     [profiles, user]
+  );
+
+  const filteredUsers = useMemo(
+    () => otherUsers.filter(p => p.full_name.toLowerCase().includes(userSearch.toLowerCase())),
+    [otherUsers, userSearch]
+  );
+
+  const selectedUser = useMemo(
+    () => profiles.find(p => p.id === toUserId),
+    [profiles, toUserId]
   );
 
   function toggleSub(id: string) {
@@ -102,7 +109,17 @@ export default function FeedbackForm() {
     });
   }
 
-  const isValid = episodeId && toUserId && sentiment && selectedSubs.length >= 1 && selectedSubs.length <= 3 && comment.length >= 10 && comment.length <= 500;
+  // Determine sentiment from selected subcategories (majority vote)
+  const derivedSentiment = useMemo((): SentimentType => {
+    if (selectedSubs.length === 0) return 'positive';
+    const posCount = selectedSubs.filter(id => {
+      const sub = subcategories.find(s => s.id === id);
+      return sub?.sentiment === 'positive';
+    }).length;
+    return posCount >= selectedSubs.length / 2 ? 'positive' : 'negative';
+  }, [selectedSubs, subcategories]);
+
+  const isValid = episodeId && toUserId && selectedSubs.length >= 1 && selectedSubs.length <= 3 && comment.length >= 10 && comment.length <= 500;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -112,27 +129,24 @@ export default function FeedbackForm() {
 
     try {
       if (isUpdate && existingFeedbackId) {
-        // Update existing
         const { error: updateErr } = await supabase
           .from('feedback')
-          .update({ sentiment, comment })
+          .update({ sentiment: derivedSentiment, comment })
           .eq('id', existingFeedbackId);
         if (updateErr) throw updateErr;
 
-        // Delete old subcategories and insert new
         await supabase.from('feedback_subcategories').delete().eq('feedback_id', existingFeedbackId);
         const subInserts = selectedSubs.map(sid => ({ feedback_id: existingFeedbackId, subcategory_id: sid }));
         const { error: subErr } = await supabase.from('feedback_subcategories').insert(subInserts);
         if (subErr) throw subErr;
       } else {
-        // Insert new
         const { data: fb, error: fbErr } = await supabase
           .from('feedback')
           .insert({
             episode_id: episodeId,
             from_user_id: user.id,
             to_user_id: toUserId,
-            sentiment,
+            sentiment: derivedSentiment,
             comment,
           })
           .select('id')
@@ -170,12 +184,12 @@ export default function FeedbackForm() {
   function resetForm() {
     setEpisodeId('');
     setToUserId('');
-    setSentiment('');
     setSelectedSubs([]);
     setComment('');
     setSubmitted(false);
     setExistingFeedbackId(null);
     setIsUpdate(false);
+    setUserSearch('');
   }
 
   if (submitted) {
@@ -187,7 +201,7 @@ export default function FeedbackForm() {
           </div>
           <h2 className="text-2xl font-bold mb-2">Спасибо!</h2>
           <p className="text-muted-foreground mb-6">
-            {isUpdate ? 'Ваш отзыв обновлён.' : 'Ваш отзыв успешно отправлен.'}
+            {isUpdate ? 'Ваш отзыв обновлён.' : 'Отзыв успешно отправлен.'}
           </p>
           <Button onClick={resetForm}>Отправить ещё</Button>
         </div>
@@ -265,93 +279,97 @@ export default function FeedbackForm() {
             </CardContent>
           </Card>
 
-          {/* Recipient */}
+          {/* Recipient with autocomplete */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Кому</CardTitle>
             </CardHeader>
             <CardContent>
-              <Select value={toUserId} onValueChange={setToUserId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите сотрудника" />
-                </SelectTrigger>
-                <SelectContent>
-                  {otherUsers.map(u => (
-                    <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {selectedUser ? (
+                <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
+                  <span className="font-medium flex-1">{selectedUser.full_name}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => { setToUserId(''); setUserSearch(''); }}
+                  >
+                    <X size={14} />
+                  </Button>
+                </div>
+              ) : (
+                <Popover open={userDropdownOpen} onOpenChange={setUserDropdownOpen}>
+                  <PopoverTrigger asChild>
+                    <div className="relative">
+                      <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={userSearch}
+                        onChange={e => { setUserSearch(e.target.value); setUserDropdownOpen(true); }}
+                        onFocus={() => setUserDropdownOpen(true)}
+                        placeholder="Начните вводить имя сотрудника..."
+                        className="pl-9"
+                      />
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start" sideOffset={4}>
+                    <div className="max-h-48 overflow-y-auto">
+                      {filteredUsers.length > 0 ? (
+                        filteredUsers.map(u => (
+                          <button
+                            key={u.id}
+                            type="button"
+                            className="w-full text-left px-3 py-2.5 text-sm hover:bg-accent transition-colors"
+                            onClick={() => {
+                              setToUserId(u.id);
+                              setUserSearch('');
+                              setUserDropdownOpen(false);
+                            }}
+                          >
+                            {u.full_name}
+                          </button>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground p-3">Сотрудник не найден</p>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
             </CardContent>
           </Card>
 
-          {/* Sentiment */}
+          {/* Unified Subcategories (no sentiment toggle) */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Тип отзыва</CardTitle>
+              <CardTitle className="text-base">
+                Подкатегории <span className="text-muted-foreground font-normal">(1–3)</span>
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => { setSentiment('positive'); setSelectedSubs([]); }}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all font-medium",
-                    sentiment === 'positive'
-                      ? "border-positive bg-positive/10 text-positive"
-                      : "border-border hover:border-positive/40"
-                  )}
-                >
-                  <ThumbsUp size={20} /> Позитивный
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setSentiment('negative'); setSelectedSubs([]); }}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all font-medium",
-                    sentiment === 'negative'
-                      ? "border-negative bg-negative/10 text-negative"
-                      : "border-border hover:border-negative/40"
-                  )}
-                >
-                  <ThumbsDown size={20} /> Негативный
-                </button>
+              <div className="flex flex-wrap gap-2">
+                {subcategories.map(sub => (
+                  <Badge
+                    key={sub.id}
+                    variant={selectedSubs.includes(sub.id) ? 'default' : 'outline'}
+                    className={cn(
+                      "cursor-pointer text-sm py-1.5 px-3 transition-all",
+                      selectedSubs.includes(sub.id)
+                        ? sub.sentiment === 'positive' ? 'bg-positive hover:bg-positive/90' : 'bg-negative hover:bg-negative/90'
+                        : 'hover:bg-muted',
+                      selectedSubs.length >= 3 && !selectedSubs.includes(sub.id) && 'opacity-40 cursor-not-allowed'
+                    )}
+                    onClick={() => toggleSub(sub.id)}
+                  >
+                    {sub.name}
+                  </Badge>
+                ))}
               </div>
+              {selectedSubs.length === 0 && (
+                <p className="text-xs text-muted-foreground mt-2">Выберите хотя бы одну подкатегорию</p>
+              )}
             </CardContent>
           </Card>
-
-          {/* Subcategories */}
-          {sentiment && (
-            <Card className="animate-fade-in">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">
-                  Подкатегории <span className="text-muted-foreground font-normal">(1–3)</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {filteredSubs.map(sub => (
-                    <Badge
-                      key={sub.id}
-                      variant={selectedSubs.includes(sub.id) ? 'default' : 'outline'}
-                      className={cn(
-                        "cursor-pointer text-sm py-1.5 px-3 transition-all",
-                        selectedSubs.includes(sub.id)
-                          ? sentiment === 'positive' ? 'bg-positive hover:bg-positive/90' : 'bg-negative hover:bg-negative/90'
-                          : 'hover:bg-muted',
-                        selectedSubs.length >= 3 && !selectedSubs.includes(sub.id) && 'opacity-40 cursor-not-allowed'
-                      )}
-                      onClick={() => toggleSub(sub.id)}
-                    >
-                      {sub.name}
-                    </Badge>
-                  ))}
-                </div>
-                {selectedSubs.length === 0 && (
-                  <p className="text-xs text-muted-foreground mt-2">Выберите хотя бы одну подкатегорию</p>
-                )}
-              </CardContent>
-            </Card>
-          )}
 
           {/* Comment */}
           <Card>
