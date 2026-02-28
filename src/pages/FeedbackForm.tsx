@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
 import { CheckCircle2, Plus, AlertCircle, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Profile, WorkEpisode, Subcategory, SentimentType } from '@/lib/supabase-types';
@@ -299,27 +299,26 @@ export default function FeedbackForm() {
                   </Button>
                 </div>
               ) : (
-                <Popover open={userDropdownOpen} onOpenChange={setUserDropdownOpen}>
-                  <PopoverTrigger asChild>
-                    <div className="relative">
-                      <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        value={userSearch}
-                        onChange={e => { setUserSearch(e.target.value); setUserDropdownOpen(true); }}
-                        onFocus={() => setUserDropdownOpen(true)}
-                        placeholder="Начните вводить имя сотрудника..."
-                        className="pl-9"
-                      />
-                    </div>
-                  </PopoverTrigger>
-                  <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start" sideOffset={4}>
-                    <div className="max-h-48 overflow-y-auto">
+              <div className="relative">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={userSearch}
+                    onChange={e => { setUserSearch(e.target.value); if (!userDropdownOpen) setUserDropdownOpen(true); }}
+                    onFocus={() => setUserDropdownOpen(true)}
+                    onBlur={() => setTimeout(() => setUserDropdownOpen(false), 200)}
+                    placeholder="Начните вводить имя сотрудника..."
+                    className="pl-9"
+                    autoComplete="off"
+                  />
+                  {userDropdownOpen && (
+                    <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg max-h-52 overflow-y-auto">
                       {filteredUsers.length > 0 ? (
                         filteredUsers.map(u => (
                           <button
                             key={u.id}
                             type="button"
                             className="w-full text-left px-3 py-2.5 text-sm hover:bg-accent transition-colors"
+                            onMouseDown={e => e.preventDefault()}
                             onClick={() => {
                               setToUserId(u.id);
                               setUserSearch('');
@@ -333,8 +332,8 @@ export default function FeedbackForm() {
                         <p className="text-sm text-muted-foreground p-3">Сотрудник не найден</p>
                       )}
                     </div>
-                  </PopoverContent>
-                </Popover>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
