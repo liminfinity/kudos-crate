@@ -63,7 +63,7 @@ export default function Dashboard() {
   async function loadAll() {
     const startDate = getPeriodStart(period).toISOString();
     const [fbRes, fsRes, profRes, teamRes, subRes, epRes] = await Promise.all([
-      supabase.from('feedback').select('id, sentiment, comment, created_at, from_user_id, to_user_id, episode_id').gte('created_at', startDate),
+      supabase.from('feedback').select('id, sentiment, comment, created_at, from_user_id, to_user_id, episode_id, is_critical').gte('created_at', startDate).eq('is_critical', false),
       supabase.from('feedback_subcategories').select('feedback_id, subcategory_id'),
       supabase.from('profiles').select('*'),
       supabase.from('teams').select('*'),

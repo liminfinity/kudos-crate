@@ -35,6 +35,7 @@ export interface Subcategory {
   name: string;
   sentiment: SentimentType;
   is_active: boolean;
+  is_critical: boolean;
   sort_order: number;
   created_at: string;
   updated_at: string;
