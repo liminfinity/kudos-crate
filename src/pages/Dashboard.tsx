@@ -145,7 +145,7 @@ export default function Dashboard() {
       .sort((a, b) => b.total - a.total);
   }, [filtered, feedbackSubs, subcatMap, profileMap]);
 
-  const graphEdges = useMemo(() => filtered.map(f => ({ from: f.from_user_id, to: f.to_user_id, sentiment: f.sentiment })), [filtered]);
+  const graphEdges = useMemo(() => filtered.map(f => ({ from: f.from_user_id, to: f.to_user_id, sentiment: f.sentiment, created_at: f.created_at })), [filtered]);
 
   function exportRawCSV() {
     const feedbackIds = new Set(filtered.map(f => f.id));
