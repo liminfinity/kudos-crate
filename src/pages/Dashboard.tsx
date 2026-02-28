@@ -13,6 +13,8 @@ import { Download, TrendingUp, TrendingDown, MessageSquare, BarChart3 } from 'lu
 import { cn } from '@/lib/utils';
 import type { Profile, Team, SentimentType } from '@/lib/supabase-types';
 import { RelationshipGraph } from '@/components/RelationshipGraph';
+import { InteractionHeatmap } from '@/components/InteractionHeatmap';
+import { ConflictMatrix } from '@/components/ConflictMatrix';
 import { subDays, subMonths, format, startOfWeek, startOfMonth, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
@@ -525,6 +527,12 @@ export default function Dashboard() {
 
         {/* Relationship Graph */}
         <RelationshipGraph profiles={profiles} feedbackEdges={graphEdges} />
+
+        {/* Heatmap */}
+        <InteractionHeatmap profiles={profiles} feedbackEdges={graphEdges} />
+
+        {/* Conflict Matrix */}
+        <ConflictMatrix profiles={profiles} feedbackEdges={graphEdges} />
       </div>
     </AppLayout>
   );
