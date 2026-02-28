@@ -12,6 +12,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Download, TrendingUp, TrendingDown, MessageSquare, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Profile, Team, SentimentType } from '@/lib/supabase-types';
+import { RelationshipGraph } from '@/components/RelationshipGraph';
 import { subDays, subMonths, format, startOfWeek, startOfMonth, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
@@ -41,6 +42,7 @@ interface FeedbackRow {
   sentiment: string;
   comment: string;
   created_at: string;
+  from_user_id: string;
   to_user_id: string;
   episode_id: string;
 }
@@ -72,7 +74,7 @@ export default function Dashboard() {
     const startDate = getPeriodStart(period).toISOString();
     
     const [fbRes, fsRes, profRes, teamRes, subRes, epRes] = await Promise.all([
-      supabase.from('feedback').select('id, sentiment, comment, created_at, to_user_id, episode_id').gte('created_at', startDate),
+      supabase.from('feedback').select('id, sentiment, comment, created_at, from_user_id, to_user_id, episode_id').gte('created_at', startDate),
       supabase.from('feedback_subcategories').select('feedback_id, subcategory_id'),
       supabase.from('profiles').select('*'),
       supabase.from('teams').select('*'),
@@ -197,6 +199,15 @@ export default function Dashboard() {
       }))
       .sort((a, b) => b.total - a.total);
   }, [filtered, feedbackSubs, subcatMap, profileMap]);
+
+  // Graph edges (anonymized direction doesn't matter for graph)
+  const graphEdges = useMemo(() => {
+    return filtered.map(f => ({
+      from: f.from_user_id,
+      to: f.to_user_id,
+      sentiment: f.sentiment,
+    }));
+  }, [filtered]);
 
   // Export CSV
   function exportRawCSV() {
@@ -511,6 +522,9 @@ export default function Dashboard() {
             </CardContent>
           )}
         </Card>
+
+        {/* Relationship Graph */}
+        <RelationshipGraph profiles={profiles} feedbackEdges={graphEdges} />
       </div>
     </AppLayout>
   );
