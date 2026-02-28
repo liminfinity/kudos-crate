@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import type { Profile, Team } from '@/lib/supabase-types';
 import { RelationshipGraph } from '@/components/RelationshipGraph';
 import { InteractionHeatmap } from '@/components/InteractionHeatmap';
-import { ConflictMatrix } from '@/components/ConflictMatrix';
+
 import { EmployeeBarChart } from '@/components/EmployeeBarChart';
 import { SentimentTimeline } from '@/components/SentimentTimeline';
 import { subDays, subMonths, format, parseISO } from 'date-fns';
@@ -354,8 +354,6 @@ export default function Dashboard() {
         {/* Heatmap */}
         <InteractionHeatmap profiles={profiles} feedbackEdges={graphEdges} />
 
-        {/* Conflict Matrix */}
-        <ConflictMatrix profiles={profiles} feedbackEdges={graphEdges} />
       </div>
     </AppLayout>
   );

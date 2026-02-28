@@ -193,9 +193,15 @@ export function RelationshipGraph({ profiles, feedbackEdges }: Props) {
   }, []);
 
   const edgeColor = (e: Edge) => {
-    if (e.sentiment === 'positive') return 'hsl(152, 56%, 40%)';
-    if (e.sentiment === 'negative') return 'hsl(4, 76%, 56%)';
-    return 'hsl(280, 60%, 55%)';
+    const score = e.total > 0 ? (e.positiveCount - e.negativeCount) / e.total : 0;
+    const absScore = Math.abs(score);
+    // Hue: 0 (red) to 120 (green), interpolated by score sign
+    const hue = score >= 0 ? 120 : 0;
+    // Saturation: 0% at neutral → 80% at extreme
+    const saturation = Math.round(absScore * 80);
+    // Lightness stays readable
+    const lightness = 45;
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   };
 
   const nodeColor = (id: string) => {
@@ -270,9 +276,10 @@ export function RelationshipGraph({ profiles, feedbackEdges }: Props) {
           <div className="fixed z-50 bg-popover text-popover-foreground border rounded-lg shadow-lg px-3 py-2 text-xs pointer-events-none"
             style={{ left: tooltipPos.x + 10, top: tooltipPos.y - 40 }}>
             <p className="font-medium">{profileMap[hoveredEdge.source]?.full_name || '?'} ↔ {profileMap[hoveredEdge.target]?.full_name || '?'}</p>
-            <p style={{ color: 'hsl(152, 56%, 40%)' }}>Позитивных: {hoveredEdge.positiveCount}</p>
-            <p style={{ color: 'hsl(4, 76%, 56%)' }}>Негативных: {hoveredEdge.negativeCount}</p>
+            <p style={{ color: 'hsl(120, 60%, 40%)' }}>Позитивных: {hoveredEdge.positiveCount}</p>
+            <p style={{ color: 'hsl(0, 60%, 50%)' }}>Негативных: {hoveredEdge.negativeCount}</p>
             <p>Всего: {hoveredEdge.total} | Баланс: {hoveredEdge.positiveCount - hoveredEdge.negativeCount > 0 ? '+' : ''}{hoveredEdge.positiveCount - hoveredEdge.negativeCount}</p>
+            <p>Score: {hoveredEdge.total > 0 ? ((hoveredEdge.positiveCount - hoveredEdge.negativeCount) / hoveredEdge.total).toFixed(2) : '0'}</p>
             <p className="text-muted-foreground">Первый: {formatDate(hoveredEdge.firstDate)} · Последний: {formatDate(hoveredEdge.lastDate)}</p>
           </div>
         )}
