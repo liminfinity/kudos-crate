@@ -12,6 +12,11 @@ import SubcategoriesPage from "./pages/Subcategories";
 import AdminUsers from "./pages/AdminUsers";
 import AdminTeams from "./pages/AdminTeams";
 import AdminEpisodes from "./pages/AdminEpisodes";
+import SurveyList from "./pages/SurveyList";
+import HalfYearSurveyForm from "./pages/HalfYearSurveyForm";
+import LeaderDiaryForm from "./pages/LeaderDiaryForm";
+import LeaderDiaryList from "./pages/LeaderDiaryList";
+import SurveyAnalytics from "./pages/SurveyAnalytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +41,11 @@ const App = () => (
             <Route path="/feedback/new" element={<ProtectedRoute><FeedbackForm /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><Dashboard /></ProtectedRoute>} />
             <Route path="/subcategories" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><SubcategoriesPage /></ProtectedRoute>} />
+            <Route path="/surveys" element={<ProtectedRoute><SurveyList /></ProtectedRoute>} />
+            <Route path="/surveys/:assignmentId" element={<ProtectedRoute><HalfYearSurveyForm /></ProtectedRoute>} />
+            <Route path="/leader-diary" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><LeaderDiaryList /></ProtectedRoute>} />
+            <Route path="/leader-diary/:assignmentId" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><LeaderDiaryForm /></ProtectedRoute>} />
+            <Route path="/analytics/half-year" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><SurveyAnalytics /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute>} />
             <Route path="/admin/teams" element={<ProtectedRoute allowedRoles={['admin']}><AdminTeams /></ProtectedRoute>} />
             <Route path="/admin/episodes" element={<ProtectedRoute allowedRoles={['admin']}><AdminEpisodes /></ProtectedRoute>} />
