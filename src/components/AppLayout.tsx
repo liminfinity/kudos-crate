@@ -1,6 +1,6 @@
-import { ReactNode } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { ReactNode } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   MessageSquarePlus,
   BarChart3,
@@ -10,9 +10,10 @@ import {
   CalendarDays,
   LogOut,
   Shield,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+  Network,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface NavItem {
   label: string;
@@ -22,12 +23,48 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Новый отзыв', path: '/feedback/new', icon: <MessageSquarePlus size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
-  { label: 'Дашборд', path: '/dashboard', icon: <BarChart3 size={18} />, roles: ['manager', 'hr', 'admin'] },
-  { label: 'Подкатегории', path: '/subcategories', icon: <Tags size={18} />, roles: ['manager', 'hr', 'admin'] },
-  { label: 'Пользователи', path: '/admin/users', icon: <Users size={18} />, roles: ['admin'] },
-  { label: 'Команды', path: '/admin/teams', icon: <Building2 size={18} />, roles: ['admin'] },
-  { label: 'Эпизоды', path: '/admin/episodes', icon: <CalendarDays size={18} />, roles: ['admin'] },
+  {
+    label: "Новый отзыв",
+    path: "/feedback/new",
+    icon: <MessageSquarePlus size={18} />,
+    roles: ["employee", "manager", "hr", "admin"],
+  },
+  {
+    label: "Дашборд",
+    path: "/dashboard",
+    icon: <BarChart3 size={18} />,
+    roles: ["manager", "hr", "admin"],
+  },
+  {
+    label: "Подкатегории",
+    path: "/subcategories",
+    icon: <Tags size={18} />,
+    roles: ["manager", "hr", "admin"],
+  },
+  {
+    label: "Пользователи",
+    path: "/admin/users",
+    icon: <Users size={18} />,
+    roles: ["admin"],
+  },
+  {
+    label: "Команды",
+    path: "/admin/teams",
+    icon: <Building2 size={18} />,
+    roles: ["admin"],
+  },
+  {
+    label: "Эпизоды",
+    path: "/admin/episodes",
+    icon: <CalendarDays size={18} />,
+    roles: ["admin"],
+  },
+  {
+    label: "Отношения",
+    path: "/admin/relationships",
+    icon: <Network size={18} />,
+    roles: ["admin"],
+  },
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {
@@ -35,18 +72,20 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const visibleItems = navItems.filter(item => role && item.roles.includes(role));
+  const visibleItems = navItems.filter(
+    (item) => role && item.roles.includes(role),
+  );
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/login');
+    navigate("/login");
   };
 
   const roleLabels: Record<string, string> = {
-    employee: 'Сотрудник',
-    manager: 'Руководитель',
-    hr: 'HR',
-    admin: 'Администратор',
+    employee: "Сотрудник",
+    manager: "Руководитель",
+    hr: "HR",
+    admin: "Администратор",
   };
 
   return (
@@ -56,12 +95,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <div className="p-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
             <Shield size={24} className="text-sidebar-primary" />
-            <h1 className="text-lg font-bold">Peer Feedback</h1>
+            <h1 className="text-lg font-bold">Я. Доносчик</h1>
           </div>
         </div>
-        
+
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {visibleItems.map(item => (
+          {visibleItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
@@ -69,7 +108,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 location.pathname === item.path
                   ? "bg-sidebar-accent text-sidebar-primary"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
               )}
             >
               {item.icon}
@@ -81,7 +120,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <div className="p-4 border-t border-sidebar-border">
           <div className="mb-3">
             <p className="text-sm font-medium truncate">{profile?.full_name}</p>
-            <p className="text-xs text-sidebar-foreground/50">{role ? roleLabels[role] : ''}</p>
+            <p className="text-xs text-sidebar-foreground/50">
+              {role ? roleLabels[role] : ""}
+            </p>
           </div>
           <Button
             variant="ghost"
@@ -97,9 +138,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto">
-        <div className="p-6 md:p-8 max-w-7xl mx-auto">
-          {children}
-        </div>
+        <div className="p-6 md:p-8 max-w-7xl mx-auto">{children}</div>
       </main>
     </div>
   );
