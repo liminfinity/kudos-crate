@@ -153,7 +153,7 @@ export default function CriticalIncidents() {
         {/* Filters */}
         <Card>
           <CardContent className="pt-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               <div>
                 <Label className="text-xs text-muted-foreground">Период</Label>
                 <Select value={period} onValueChange={v => setPeriod(v as PeriodPreset)}>
@@ -200,7 +200,7 @@ export default function CriticalIncidents() {
         </Card>
 
         {/* KPI */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card><CardContent className="pt-5"><p className="text-2xl font-bold text-destructive">{filtered.length}</p><p className="text-xs text-muted-foreground">Инцидентов за период</p></CardContent></Card>
           <Card><CardContent className="pt-5"><p className="text-2xl font-bold">{repeatData.length}</p><p className="text-xs text-muted-foreground">Повторные нарушители</p></CardContent></Card>
           <Card><CardContent className="pt-5"><p className="text-2xl font-bold">{teamDist.length}</p><p className="text-xs text-muted-foreground">Команд затронуто</p></CardContent></Card>
@@ -271,6 +271,7 @@ export default function CriticalIncidents() {
         <Card>
           <CardHeader><CardTitle className="text-base">Детали инцидентов</CardTitle></CardHeader>
           <CardContent>
+            <div className="overflow-x-auto -mx-6 px-6">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -299,6 +300,7 @@ export default function CriticalIncidents() {
                 {filtered.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Нет инцидентов</TableCell></TableRow>}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
       </div>

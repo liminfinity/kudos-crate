@@ -194,7 +194,7 @@ export default function Dashboard() {
         {/* Filters */}
         <Card>
           <CardContent className="pt-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               <div>
                 <Label className="text-xs text-muted-foreground">Период</Label>
                 <Select value={period} onValueChange={v => setPeriod(v as PeriodPreset)}>
@@ -291,6 +291,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader><CardTitle className="text-base">Получатели (агрегат)</CardTitle></CardHeader>
           <CardContent>
+            <div className="overflow-x-auto -mx-6 px-6">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -314,6 +315,7 @@ export default function Dashboard() {
                 {recipientsTable.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Нет данных</TableCell></TableRow>}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
 
