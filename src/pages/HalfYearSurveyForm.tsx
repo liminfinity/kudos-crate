@@ -19,6 +19,7 @@ import { EmojiScale } from '@/components/survey/EmojiScale';
 import { LikertCards } from '@/components/survey/LikertCards';
 import { SurveyCompletion } from '@/components/survey/SurveyCompletion';
 import { SurveyProgress } from '@/components/survey/SurveyProgress';
+import { SurveyProgressSidebar } from '@/components/survey/SurveyProgressSidebar';
 import { StepWrapper } from '@/components/survey/StepWrapper';
 
 const STEPS = [
@@ -247,7 +248,8 @@ export default function HalfYearSurveyForm() {
 
   return (
     <AppLayout>
-      <div className="max-w-3xl mx-auto animate-fade-in">
+      <div className="flex gap-6 animate-fade-in">
+      <div className="flex-1 max-w-3xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <div>
@@ -257,14 +259,17 @@ export default function HalfYearSurveyForm() {
           {readOnly && <Badge variant="secondary">Только просмотр</Badge>}
         </div>
 
-        {/* Progress */}
-        <SurveyProgress
-          currentStep={step}
-          totalSteps={STEPS.length}
-          stepNames={STEPS}
-          stepIcons={STEP_ICONS}
-          onStepClick={setStep}
-        />
+        {/* Top progress bar (mobile-visible) */}
+        <div className="lg:hidden">
+          <SurveyProgress
+            currentStep={step}
+            totalSteps={STEPS.length}
+            stepNames={STEPS}
+            stepIcons={STEP_ICONS}
+            onStepClick={setStep}
+            compact
+          />
+        </div>
 
         {error && <div className="mb-4 p-3 rounded-xl bg-destructive/10 text-destructive text-sm">{error}</div>}
 
@@ -489,6 +494,17 @@ export default function HalfYearSurveyForm() {
             </div>
           )}
         </div>
+      </div>
+      {/* Right sidebar progress (desktop only) */}
+      <div className="hidden lg:block">
+        <SurveyProgressSidebar
+          currentStep={step}
+          totalSteps={STEPS.length}
+          stepNames={STEPS}
+          stepIcons={STEP_ICONS}
+          onStepClick={setStep}
+        />
+      </div>
       </div>
     </AppLayout>
   );

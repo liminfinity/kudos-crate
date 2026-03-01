@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import miraAvatar from '@/assets/mira-avatar.png';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -110,6 +111,20 @@ export default function Login() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Mira greeting */}
+        <div className="mt-6 flex items-start gap-3 p-4 rounded-xl bg-accent/5 border border-accent/15">
+          <img src={miraAvatar} alt="МИРА" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+          <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <Sparkles size={12} className="text-accent" />
+              <span className="text-xs font-medium text-accent">МИРА</span>
+            </div>
+            <p className="text-sm text-foreground/70 leading-relaxed">
+              Здравствуйте! Я помогу вам разобраться с платформой и сделать обратную связь проще.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
