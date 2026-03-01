@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AppLayout } from '@/components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy, Code2, ExternalLink, Check, MessageSquarePlus, Heart, ClipboardList, Trophy } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Copy, Code2, ExternalLink, Check, MessageSquarePlus, Heart, ClipboardList, Trophy, MousePointerClick } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Team } from '@/lib/supabase-types';
 
@@ -26,7 +25,7 @@ interface Episode {
   date: string;
 }
 
-type EmbedType = 'survey' | 'feedback' | 'kudos' | 'top-kudos';
+type EmbedType = 'survey' | 'feedback' | 'kudos' | 'top-kudos' | 'cta';
 
 export default function EmbedSettings() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -42,6 +41,14 @@ export default function EmbedSettings() {
   const [kudosPeriod, setKudosPeriod] = useState<'7d' | '30d' | '90d'>('30d');
   const [kudosTeam, setKudosTeam] = useState('');
   const [kudosLimit, setKudosLimit] = useState<'5' | '10'>('10');
+  // CTA settings
+  const [ctaLabel, setCtaLabel] = useState('Перейти в МИРУ');
+  const [ctaSubtitle, setCtaSubtitle] = useState('');
+  const [ctaTarget, setCtaTarget] = useState('/');
+  const [ctaCustomPath, setCtaCustomPath] = useState('');
+  const [ctaNewTab, setCtaNewTab] = useState(true);
+  const [ctaSize, setCtaSize] = useState<'s' | 'm' | 'l'>('m');
+  const [ctaStyle, setCtaStyle] = useState<'primary' | 'secondary' | 'outline'>('primary');
 
   const baseUrl = window.location.origin;
 
@@ -59,21 +66,26 @@ export default function EmbedSettings() {
     setLoading(false);
   }
 
+  const ctaTargetPath = ctaTarget === 'custom' ? ctaCustomPath : ctaTarget;
+
   const embedUrl = embedType === 'survey'
     ? `${baseUrl}/embed/survey/${selectedCycleId}?theme=${theme}`
     : embedType === 'feedback'
     ? `${baseUrl}/embed/feedback?episodeId=${selectedEpisodeId}&theme=${theme}`
     : embedType === 'top-kudos'
     ? `${baseUrl}/embed/top-kudos?period=${kudosPeriod}&limit=${kudosLimit}${kudosTeam ? `&teamId=${kudosTeam}` : ''}&theme=${theme}`
+    : embedType === 'cta'
+    ? `${baseUrl}/embed/cta-button?label=${encodeURIComponent(ctaLabel)}&target=${encodeURIComponent(ctaTargetPath)}${ctaSubtitle ? `&subtitle=${encodeURIComponent(ctaSubtitle)}` : ''}&theme=${theme}&size=${ctaSize}&style=${ctaStyle}&newTab=${ctaNewTab}`
     : `${baseUrl}/embed/kudos?theme=${theme}`;
 
   function generateIframeCode() {
-    const height = embedType === 'top-kudos' ? 520 : embedType === 'kudos' ? 520 : embedType === 'feedback' ? 720 : 600;
+    const height = embedType === 'cta' ? 120 : embedType === 'top-kudos' ? 520 : embedType === 'kudos' ? 520 : embedType === 'feedback' ? 720 : 600;
+    const maxWidth = embedType === 'cta' ? 'max-width:400px;' : 'max-width:720px;';
     return `<iframe
   src="${embedUrl}"
   width="100%"
   height="${height}"
-  style="border:none;border-radius:12px;max-width:720px;"
+  style="border:none;border-radius:12px;${maxWidth}"
   loading="lazy"
   allow="clipboard-write"
 ></iframe>`;
@@ -90,8 +102,19 @@ export default function EmbedSettings() {
     survey: { label: 'Опрос', icon: ClipboardList, desc: 'Встроить полугодовой опрос' },
     feedback: { label: 'Отзыв по эпизоду', icon: MessageSquarePlus, desc: 'Отзыв на конкретный рабочий эпизод' },
     kudos: { label: 'Благодарность', icon: Heart, desc: 'Отправить kudos коллеге' },
-    'top-kudos': { label: 'Топ Kudos', icon: Trophy, desc: 'Рейтинг сотрудников по благодарностям' },
+    'top-kudos': { label: 'Топ Kudos', icon: Trophy, desc: 'Рейтинг по благодарностям' },
+    cta: { label: 'Кнопка (CTA)', icon: MousePointerClick, desc: 'Кнопка перехода в МИРУ' },
   };
+
+  const ctaTargetOptions = [
+    { value: '/', label: 'Главная' },
+    { value: '/feedback/new', label: 'Оставить отзыв' },
+    { value: '/surveys', label: 'Опросы' },
+    { value: '/kudos/new', label: 'Благодарности' },
+    { value: '/dashboard', label: 'Аналитика' },
+    { value: '/settings', label: 'Настройки' },
+    { value: 'custom', label: 'Произвольный путь...' },
+  ];
 
   return (
       <div className="max-w-4xl mx-auto animate-fade-in">
@@ -106,7 +129,7 @@ export default function EmbedSettings() {
             <Card>
               <CardHeader><CardTitle className="text-base">Тип встраивания</CardTitle></CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                   {(Object.entries(embedTypeLabels) as [EmbedType, typeof embedTypeLabels.survey][]).map(([type, info]) => {
                     const Icon = info.icon;
                     return (
@@ -190,6 +213,61 @@ export default function EmbedSettings() {
                       </div>
                     </>
                   )}
+                  {embedType === 'cta' && (
+                    <>
+                      <div>
+                        <Label>Текст кнопки</Label>
+                        <Input value={ctaLabel} onChange={e => setCtaLabel(e.target.value)} placeholder="Перейти в МИРУ" />
+                      </div>
+                      <div>
+                        <Label>Подпись (необязательно)</Label>
+                        <Input value={ctaSubtitle} onChange={e => setCtaSubtitle(e.target.value)} placeholder="Оставьте отзыв коллеге" />
+                      </div>
+                      <div>
+                        <Label>Целевая страница</Label>
+                        <Select value={ctaTarget} onValueChange={setCtaTarget}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {ctaTargetOptions.map(o => (
+                              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {ctaTarget === 'custom' && (
+                        <div>
+                          <Label>Путь</Label>
+                          <Input value={ctaCustomPath} onChange={e => setCtaCustomPath(e.target.value)} placeholder="/my-page" />
+                        </div>
+                      )}
+                      <div>
+                        <Label>Размер</Label>
+                        <Select value={ctaSize} onValueChange={(v: 's' | 'm' | 'l') => setCtaSize(v)}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="s">Маленький (S)</SelectItem>
+                            <SelectItem value="m">Средний (M)</SelectItem>
+                            <SelectItem value="l">Большой (L)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Стиль</Label>
+                        <Select value={ctaStyle} onValueChange={(v: 'primary' | 'secondary' | 'outline') => setCtaStyle(v)}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="primary">Primary</SelectItem>
+                            <SelectItem value="secondary">Secondary</SelectItem>
+                            <SelectItem value="outline">Outline</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-center gap-3 pt-2">
+                        <Switch checked={ctaNewTab} onCheckedChange={setCtaNewTab} id="cta-newtab" />
+                        <Label htmlFor="cta-newtab" className="text-sm">Открывать в новой вкладке</Label>
+                      </div>
+                    </>
+                  )}
                   <div>
                     <Label>Тема</Label>
                     <Select value={theme} onValueChange={(v: 'light' | 'dark') => setTheme(v)}>
@@ -216,7 +294,13 @@ export default function EmbedSettings() {
               </CardHeader>
               <CardContent>
                 <div className="rounded-xl border border-border overflow-hidden bg-muted/30">
-                  <iframe src={embedUrl} width="100%" height="500" style={{ border: 'none', borderRadius: '12px' }} loading="lazy" />
+                  <iframe
+                    src={embedUrl}
+                    width="100%"
+                    height={embedType === 'cta' ? 120 : 500}
+                    style={{ border: 'none', borderRadius: '12px' }}
+                    loading="lazy"
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -231,7 +315,11 @@ export default function EmbedSettings() {
                     {copied ? <Check size={14} /> : <Copy size={14} />}
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">Вставьте код на HTML-страницу. Все ответы будут помечены source: "embed".</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {embedType === 'cta'
+                    ? 'Вставьте код на HTML-страницу. Кнопка откроет МИРУ в выбранном разделе.'
+                    : 'Вставьте код на HTML-страницу. Все ответы будут помечены source: "embed".'}
+                </p>
               </CardContent>
             </Card>
           </div>
