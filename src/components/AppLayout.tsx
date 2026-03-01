@@ -26,7 +26,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Отзыв', path: '/feedback/new', icon: <MessageSquarePlus size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
   { label: 'Опросы', path: '/surveys', icon: <ClipboardList size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
-  { label: 'Атмосфера', path: '/mood', icon: <Activity size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
+  { label: 'Атмосфера', path: '/mood', icon: <Activity size={18} />, roles: ['manager', 'hr', 'admin'] },
   { label: 'Аналитика', path: '/dashboard', icon: <BarChart3 size={18} />, roles: ['manager', 'hr', 'admin'] },
   { label: 'Управление', path: '/admin/users', icon: <Users size={18} />, roles: ['admin'] },
   { label: 'Настройки', path: '/settings', icon: <Settings size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },

@@ -80,7 +80,7 @@ const App = () => (
             <Route path="/review-360/fill/:assignmentId" element={<ProtectedRoute><Review360Fill /></ProtectedRoute>} />
 
             {/* Mood — standalone */}
-            <Route path="/mood" element={<ProtectedRoute><CompanyMood /></ProtectedRoute>} />
+            <Route path="/mood" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><CompanyMood /></ProtectedRoute>} />
 
             {/* Analytics section — persistent tabs */}
             <Route element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><AnalyticsSectionLayout /></ProtectedRoute>}>
