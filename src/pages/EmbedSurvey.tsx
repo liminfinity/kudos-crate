@@ -1,47 +1,56 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Star, FolderOpen, Building2, TrendingUp, Heart, MessageCircle, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SelectableCard } from '@/components/survey/SelectableCard';
+import { EmojiScale } from '@/components/survey/EmojiScale';
+import { LikertCards } from '@/components/survey/LikertCards';
+import { SurveyCompletion } from '@/components/survey/SurveyCompletion';
+import { SurveyProgress } from '@/components/survey/SurveyProgress';
+import { StepWrapper } from '@/components/survey/StepWrapper';
+import { MiraHint } from '@/components/MiraHint';
 
-// Standalone embed survey page — no AppLayout, no auth required
-// Reuses the half-year survey structure
-
-const STEPS = [
-  'Общая информация',
-  'Работа за 6 месяцев',
-  'Оценка условий работы',
-  'Рост и развитие',
-  'Состояние и динамика',
-  'Обратная связь',
-  'Важное',
-];
+const STEPS = ['Привет', 'Работа', 'Условия', 'Развитие', 'Состояние', 'Обратная связь', 'Важное'];
+const STEP_ICONS = [Star, FolderOpen, Building2, TrendingUp, Heart, MessageCircle, AlertTriangle];
 
 const DIFFICULTIES = [
-  'Размытые требования/цели',
-  'Высокая нагрузка/переработки',
-  'Зависимости от других',
-  'Нехватка знаний/опыта',
-  'Сложности в коммуникации',
+  { label: 'Размытые цели', emoji: '🎯' },
+  { label: 'Перегрузка', emoji: '⚡' },
+  { label: 'Зависимости от других', emoji: '🔗' },
+  { label: 'Нехватка опыта', emoji: '📚' },
+  { label: 'Коммуникация', emoji: '💬' },
 ];
 
 const WORK_CONDITIONS = [
-  'Понимаю, что от меня ждут',
-  'Хватает ресурсов для работы',
-  'Понятна постановка задач',
-  'Чувствую поддержку руководителя',
+  'Понимаю ожидания',
+  'Хватает ресурсов',
+  'Задачи понятны',
+  'Поддержка руководителя',
   'Атмосфера в команде',
-  'Справедливость распределения нагрузки',
+  'Нагрузка справедлива',
 ];
 
-const LIKERT_OPTIONS = ['Полностью устраивает', 'Скорее да', 'Скорее нет', 'Не устраивает'];
-
-const WELLBEING_OPTIONS = [
-  'Стабильно, комфортно',
-  'Рабочее состояние, но бывают сложности',
-  'Часто чувствую напряжение или усталость',
-  'Близок к выгоранию',
+const LIKERT_OPTIONS = [
+  { label: 'Полностью устраивает', emoji: '😊' },
+  { label: 'Скорее да', emoji: '🙂' },
+  { label: 'Скорее нет', emoji: '😐' },
+  { label: 'Не устраивает', emoji: '😟' },
 ];
+
+const WELLBEING_EMOJI = [
+  { emoji: '😟', label: 'Тяжело', value: 'Близок к выгоранию' },
+  { emoji: '😐', label: 'Напряжение', value: 'Часто чувствую напряжение или усталость' },
+  { emoji: '🙂', label: 'Нормально', value: 'Рабочее состояние, но бывают сложности' },
+  { emoji: '😊', label: 'Комфортно', value: 'Стабильно, комфортно' },
+  { emoji: '🔥', label: 'Отлично', value: 'Энергия и драйв' },
+];
+
+const STEP_MIRA_HINTS: Record<number, string> = {
+  0: 'Это займёт всего 3–5 минут. Отвечайте как чувствуете.',
+  2: 'Честная оценка помогает улучшить рабочую среду для всех.',
+  4: 'Ваше состояние важно. Выберите то, что ближе.',
+};
 
 interface Answers {
   respondent_name: string;
@@ -90,7 +99,6 @@ export default function EmbedSurvey() {
     loadCycle();
   }, [cycleId]);
 
-  // Auto-resize iframe via postMessage
   useEffect(() => {
     const sendHeight = () => {
       window.parent.postMessage({ type: 'mira-resize', height: document.body.scrollHeight + 40 }, '*');
@@ -132,14 +140,14 @@ export default function EmbedSurvey() {
     setSubmitting(true);
     setError('');
     try {
-      const { error: insertError } = await supabase.from('embed_responses' as any).insert({
-        cycle_id: cycleId,
+      const { error: insertError } = await supabase.from('embed_responses').insert([{
+        cycle_id: cycleId!,
         template_id: cycleData?.template_id,
-        answers_json: answers,
+        answers_json: answers as any,
         respondent_email: answers.respondent_email || null,
         source: 'embed',
-        metadata: { respondent_name: answers.respondent_name, theme, origin: document.referrer },
-      });
+        metadata: { respondent_name: answers.respondent_name, theme, origin: document.referrer } as any,
+      }]);
       if (insertError) throw insertError;
       setSubmitted(true);
       window.parent.postMessage({ type: 'mira-submitted' }, '*');
@@ -148,6 +156,10 @@ export default function EmbedSurvey() {
     }
     setSubmitting(false);
   }
+
+  const inputCls = "w-full rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all";
+  const textareaCls = cn(inputCls, "resize-none");
+  const labelCls = "block text-sm font-medium mb-1.5 text-foreground";
 
   if (loading) {
     return (
@@ -167,193 +179,165 @@ export default function EmbedSurvey() {
 
   if (submitted) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[300px] bg-background text-foreground p-8 text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 mb-6">
-          <CheckCircle2 size={32} className="text-accent" />
-        </div>
-        <h2 className="text-xl font-bold mb-2">Спасибо за участие</h2>
-        <p className="text-muted-foreground">Ваш ответ принят. Мы ценим ваше мнение.</p>
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <SurveyCompletion
+          title="Спасибо за участие!"
+          subtitle="Ваш ответ принят. Мы ценим ваше мнение и используем его для улучшений."
+        />
       </div>
     );
   }
-
-  const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring";
-  const textareaCls = cn(inputCls, "resize-none");
-  const labelCls = "block text-sm font-medium mb-1 text-foreground";
-  const cardCls = "rounded-xl border border-border bg-card p-5 shadow-sm";
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-6 font-sans" style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="mb-5">
+        <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
             <span className="font-bold text-base tracking-wide">МИРА</span>
-            <span className="text-xs text-muted-foreground">• встроенный опрос</span>
+            <span className="text-xs text-muted-foreground">• опрос</span>
           </div>
           <h1 className="text-lg font-bold">{(cycleData as any)?.template?.name || 'Опрос'}</h1>
           <p className="text-sm text-muted-foreground">{cycleData.label} • {cycleData.period_start} — {cycleData.period_end}</p>
         </div>
 
-        {/* Step indicator */}
-        <div className="flex gap-1 mb-5 overflow-x-auto pb-1">
-          {STEPS.map((s, i) => (
-            <button
-              key={i}
-              onClick={() => setStep(i)}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
-                i === step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              )}
-            >
-              {i + 1}
-            </button>
-          ))}
-        </div>
+        {/* Progress */}
+        <SurveyProgress
+          currentStep={step}
+          totalSteps={STEPS.length}
+          stepNames={STEPS}
+          stepIcons={STEP_ICONS}
+          onStepClick={setStep}
+          compact
+        />
 
-        {error && <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
+        {error && <div className="mb-4 p-3 rounded-xl bg-destructive/10 text-destructive text-sm">{error}</div>}
 
-        {/* Step 0: Info */}
+        {/* Mira hint */}
+        {STEP_MIRA_HINTS[step] && (
+          <MiraHint variant="tip" className="mb-4">
+            {STEP_MIRA_HINTS[step]}
+          </MiraHint>
+        )}
+
+        {/* Step 0: Hello */}
         {step === 0 && (
-          <div className={cardCls}>
-            <h2 className="font-semibold mb-4">Общая информация</h2>
-            <div className="space-y-3">
+          <StepWrapper icon={Star} title="Привет 👋">
+            <div className="space-y-4">
               <div>
-                <label className={labelCls}>Ваше имя (необязательно)</label>
-                <input className={inputCls} value={answers.respondent_name} onChange={e => update('respondent_name', e.target.value)} placeholder="Иван Петров" />
+                <label className={labelCls}>Ваше имя <span className="text-muted-foreground font-normal">(необязательно)</span></label>
+                <input className={inputCls} value={answers.respondent_name} onChange={e => update('respondent_name', e.target.value)} placeholder="Иван" />
               </div>
               <div>
-                <label className={labelCls}>Email (необязательно)</label>
+                <label className={labelCls}>Email <span className="text-muted-foreground font-normal">(необязательно)</span></label>
                 <input className={inputCls} type="email" value={answers.respondent_email} onChange={e => update('respondent_email', e.target.value)} placeholder="email@company.ru" />
               </div>
-              <div>
-                <label className={labelCls}>Период опроса</label>
-                <input className={inputCls} value={`${cycleData.period_start} — ${cycleData.period_end}`} disabled />
-              </div>
             </div>
-          </div>
+          </StepWrapper>
         )}
 
         {/* Step 1: Work */}
         {step === 1 && (
-          <div className={cardCls}>
-            <h2 className="font-semibold mb-4">Работа за период</h2>
-            <div className="space-y-3">
+          <StepWrapper icon={FolderOpen} title="Работа за период">
+            <div className="space-y-4">
               <div>
-                <label className={labelCls}>Над чем главным вы работали? *</label>
-                <textarea className={textareaCls} rows={4} value={answers.main_work} onChange={e => update('main_work', e.target.value.slice(0, 2000))} placeholder="Перечислите основные задачи/проекты..." />
-                <p className="text-xs text-muted-foreground mt-1">{answers.main_work.length}/2000</p>
+                <label className={labelCls}>Над чем работали? *</label>
+                <textarea className={textareaCls} rows={3} value={answers.main_work} onChange={e => update('main_work', e.target.value.slice(0, 2000))} placeholder="Основные задачи и проекты" />
+                <p className="text-xs text-muted-foreground mt-1 text-right">{answers.main_work.length}/2000</p>
               </div>
               <div>
-                <label className={labelCls}>Главное достижение</label>
-                <textarea className={textareaCls} rows={3} value={answers.main_achievement} onChange={e => update('main_achievement', e.target.value.slice(0, 2000))} placeholder="Чем гордитесь?" />
+                <label className={labelCls}>Главное достижение 🏆</label>
+                <textarea className={textareaCls} rows={2} value={answers.main_achievement} onChange={e => update('main_achievement', e.target.value.slice(0, 2000))} placeholder="Чем гордитесь?" />
               </div>
               <div>
-                <label className={labelCls}>С какими сложностями столкнулись?</label>
-                {DIFFICULTIES.map(d => (
-                  <label key={d} className="flex items-center gap-2 mb-2 cursor-pointer">
-                    <input type="checkbox" checked={answers.difficulties.includes(d)} onChange={() => toggleDifficulty(d)} className="w-4 h-4 accent-primary" />
-                    <span className="text-sm">{d}</span>
-                  </label>
-                ))}
+                <label className={labelCls}>Сложности</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {DIFFICULTIES.map(d => (
+                    <SelectableCard
+                      key={d.label}
+                      selected={answers.difficulties.includes(d.label)}
+                      onClick={() => toggleDifficulty(d.label)}
+                      emoji={d.emoji}
+                      label={d.label}
+                      className="p-3"
+                    />
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          </StepWrapper>
         )}
 
         {/* Step 2: Work Conditions */}
         {step === 2 && (
-          <div className={cardCls}>
-            <h2 className="font-semibold mb-4">Оценка условий работы</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className="text-left py-2 pr-4 font-medium">Параметр</th>
-                    {LIKERT_OPTIONS.map(o => (
-                      <th key={o} className="text-center py-2 px-1 font-medium text-xs">{o}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {WORK_CONDITIONS.map(cond => (
-                    <tr key={cond} className="border-t border-border">
-                      <td className="py-3 pr-4 text-sm">{cond}</td>
-                      {LIKERT_OPTIONS.map(opt => (
-                        <td key={opt} className="text-center py-3 px-1">
-                          <input type="radio" name={`cond_${cond}`} checked={answers.work_conditions[cond] === opt}
-                            onChange={() => update('work_conditions', { ...answers.work_conditions, [cond]: opt })}
-                            className="w-4 h-4 accent-primary" />
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <StepWrapper icon={Building2} title="Условия работы">
+            <div className="space-y-3">
+              {WORK_CONDITIONS.map(cond => (
+                <LikertCards
+                  key={cond}
+                  question={cond}
+                  options={LIKERT_OPTIONS}
+                  value={answers.work_conditions[cond] || ''}
+                  onChange={(val) => update('work_conditions', { ...answers.work_conditions, [cond]: val })}
+                />
+              ))}
             </div>
-          </div>
+          </StepWrapper>
         )}
 
         {/* Step 3: Growth */}
         {step === 3 && (
-          <div className={cardCls}>
-            <h2 className="font-semibold mb-4">Рост и развитие</h2>
-            <div className="space-y-3">
+          <StepWrapper icon={TrendingUp} title="Развитие">
+            <div className="space-y-4">
               <div>
-                <label className={labelCls}>Чему вы научились за этот период?</label>
-                <textarea className={textareaCls} rows={3} value={answers.learned} onChange={e => update('learned', e.target.value.slice(0, 2000))} />
+                <label className={labelCls}>Чему научились? 📖</label>
+                <textarea className={textareaCls} rows={2} value={answers.learned} onChange={e => update('learned', e.target.value.slice(0, 2000))} placeholder="Новые навыки, знания, опыт" />
               </div>
               <div>
-                <label className={labelCls}>Что хотите развивать?</label>
-                <textarea className={textareaCls} rows={3} value={answers.want_to_develop} onChange={e => update('want_to_develop', e.target.value.slice(0, 2000))} />
+                <label className={labelCls}>Что хотите развивать? 🚀</label>
+                <textarea className={textareaCls} rows={2} value={answers.want_to_develop} onChange={e => update('want_to_develop', e.target.value.slice(0, 2000))} placeholder="Куда хотите расти?" />
               </div>
             </div>
-          </div>
+          </StepWrapper>
         )}
 
-        {/* Step 4: Wellbeing */}
+        {/* Step 4: Wellbeing — Emoji Scale */}
         {step === 4 && (
-          <div className={cardCls}>
-            <h2 className="font-semibold mb-4">Состояние и динамика</h2>
-            <div>
-              <label className={labelCls}>Как вы себя ощущаете?</label>
-              {WELLBEING_OPTIONS.map(opt => (
-                <label key={opt} className="flex items-center gap-2 mb-2 cursor-pointer">
-                  <input type="radio" name="wellbeing" checked={answers.wellbeing === opt}
-                    onChange={() => update('wellbeing', opt)} className="w-4 h-4 accent-primary" />
-                  <span className="text-sm">{opt}</span>
-                </label>
-              ))}
+          <StepWrapper icon={Heart} title="Как вы себя чувствуете?">
+            <div className="py-4">
+              <EmojiScale
+                options={WELLBEING_EMOJI}
+                value={answers.wellbeing}
+                onChange={(val) => update('wellbeing', val)}
+              />
             </div>
-          </div>
+          </StepWrapper>
         )}
 
         {/* Step 5: Feedback */}
         {step === 5 && (
-          <div className={cardCls}>
-            <h2 className="font-semibold mb-4">Обратная связь</h2>
-            <div className="space-y-3">
+          <StepWrapper icon={MessageCircle} title="Обратная связь">
+            <div className="space-y-4">
               <div>
-                <label className={labelCls}>Что помогает в работе?</label>
-                <textarea className={textareaCls} rows={3} value={answers.feedback_helps} onChange={e => update('feedback_helps', e.target.value.slice(0, 2000))} />
+                <label className={labelCls}>Что помогает? 💪</label>
+                <textarea className={textareaCls} rows={2} value={answers.feedback_helps} onChange={e => update('feedback_helps', e.target.value.slice(0, 2000))} placeholder="Напишите главное" />
               </div>
               <div>
-                <label className={labelCls}>Что мешает?</label>
-                <textarea className={textareaCls} rows={3} value={answers.feedback_hinders} onChange={e => update('feedback_hinders', e.target.value.slice(0, 2000))} />
+                <label className={labelCls}>Что мешает? 🚧</label>
+                <textarea className={textareaCls} rows={2} value={answers.feedback_hinders} onChange={e => update('feedback_hinders', e.target.value.slice(0, 2000))} placeholder="Напишите главное" />
               </div>
             </div>
-          </div>
+          </StepWrapper>
         )}
 
         {/* Step 6: Important */}
         {step === 6 && (
-          <div className={cardCls}>
-            <h2 className="font-semibold mb-4">Важное</h2>
+          <StepWrapper icon={AlertTriangle} title="Важное">
             <div>
-              <label className={labelCls}>Что ещё важно сказать?</label>
-              <textarea className={textareaCls} rows={4} value={answers.important} onChange={e => update('important', e.target.value.slice(0, 2000))} placeholder="Всё, что считаете важным..." />
+              <label className={labelCls}>Что ещё хотите сказать?</label>
+              <textarea className={textareaCls} rows={3} value={answers.important} onChange={e => update('important', e.target.value.slice(0, 2000))} placeholder="Всё, что считаете важным" />
             </div>
-          </div>
+          </StepWrapper>
         )}
 
         {/* Navigation */}
@@ -361,7 +345,7 @@ export default function EmbedSurvey() {
           <button
             onClick={() => setStep(Math.max(0, step - 1))}
             disabled={step === 0}
-            className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-40 transition-colors"
+            className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-40 transition-all"
           >
             <ChevronLeft size={16} /> Назад
           </button>
@@ -369,7 +353,7 @@ export default function EmbedSurvey() {
           {step < STEPS.length - 1 ? (
             <button
               onClick={() => setStep(step + 1)}
-              className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 transition-colors"
+              className="flex items-center gap-1 px-5 py-2.5 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 transition-all active:scale-[0.97]"
             >
               Далее <ChevronRight size={16} />
             </button>
@@ -377,15 +361,14 @@ export default function EmbedSurvey() {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium bg-accent text-accent-foreground hover:opacity-90 disabled:opacity-60 transition-colors"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium bg-accent text-accent-foreground hover:opacity-90 disabled:opacity-60 transition-all active:scale-[0.97]"
             >
-              {submitting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+              {submitting ? <Loader2 size={16} className="animate-spin" /> : '✨'}
               Отправить
             </button>
           )}
         </div>
 
-        {/* Footer */}
         <div className="mt-6 text-center text-xs text-muted-foreground">
           Опрос проводится на платформе МИРА
         </div>
