@@ -11,18 +11,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart as RBarChart } from 'recharts';
 import { Download, TrendingUp, TrendingDown, MessageSquare, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Profile, Team, SentimentType } from '@/lib/supabase-types';
-import { subDays, subMonths, format, startOfWeek, startOfMonth, parseISO } from 'date-fns';
+import type { Profile, Team } from '@/lib/supabase-types';
+import { RelationshipGraph } from '@/components/RelationshipGraph';
+import { InteractionHeatmap } from '@/components/InteractionHeatmap';
+
+import { EmployeeBarChart } from '@/components/EmployeeBarChart';
+import { SentimentTimeline } from '@/components/SentimentTimeline';
+import { subDays, subMonths, format, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
 type PeriodPreset = '7d' | '30d' | '3m' | '6m' | '1y';
 
 const periodLabels: Record<PeriodPreset, string> = {
-  '7d': '7 дней',
-  '30d': '30 дней',
-  '3m': '3 месяца',
-  '6m': '6 месяцев',
-  '1y': 'Год',
+  '7d': '7 дней', '30d': '30 дней', '3m': '3 месяца', '6m': '6 месяцев', '1y': 'Год',
 };
 
 function getPeriodStart(preset: PeriodPreset): Date {
@@ -37,18 +38,11 @@ function getPeriodStart(preset: PeriodPreset): Date {
 }
 
 interface FeedbackRow {
-  id: string;
-  sentiment: string;
-  comment: string;
-  created_at: string;
-  to_user_id: string;
-  episode_id: string;
+  id: string; sentiment: string; comment: string; created_at: string;
+  from_user_id: string; to_user_id: string; episode_id: string;
 }
 
-interface SubcategoryRow {
-  subcategory_id: string;
-  feedback_id: string;
-}
+interface SubcategoryRow { subcategory_id: string; feedback_id: string; }
 
 export default function Dashboard() {
   const [period, setPeriod] = useState<PeriodPreset>('6m');
@@ -56,7 +50,7 @@ export default function Dashboard() {
   const [employeeFilter, setEmployeeFilter] = useState('all');
   const [sentimentFilter, setSentimentFilter] = useState('all');
   const [showComments, setShowComments] = useState(false);
-  
+
   const [feedbackData, setFeedbackData] = useState<FeedbackRow[]>([]);
   const [feedbackSubs, setFeedbackSubs] = useState<SubcategoryRow[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -64,22 +58,18 @@ export default function Dashboard() {
   const [subcatMap, setSubcatMap] = useState<Record<string, { name: string; sentiment: string }>>({});
   const [episodes, setEpisodes] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    loadAll();
-  }, [period]);
+  useEffect(() => { loadAll(); }, [period]);
 
   async function loadAll() {
     const startDate = getPeriodStart(period).toISOString();
-    
     const [fbRes, fsRes, profRes, teamRes, subRes, epRes] = await Promise.all([
-      supabase.from('feedback').select('id, sentiment, comment, created_at, to_user_id, episode_id').gte('created_at', startDate),
+      supabase.from('feedback').select('id, sentiment, comment, created_at, from_user_id, to_user_id, episode_id, is_critical').gte('created_at', startDate).eq('is_critical', false),
       supabase.from('feedback_subcategories').select('feedback_id, subcategory_id'),
       supabase.from('profiles').select('*'),
       supabase.from('teams').select('*'),
       supabase.from('subcategories').select('*'),
       supabase.from('work_episodes').select('id, title'),
     ]);
-
     if (fbRes.data) setFeedbackData(fbRes.data as unknown as FeedbackRow[]);
     if (fsRes.data) setFeedbackSubs(fsRes.data as unknown as SubcategoryRow[]);
     if (profRes.data) setProfiles(profRes.data as unknown as Profile[]);
@@ -96,14 +86,12 @@ export default function Dashboard() {
     }
   }
 
-  // Build lookup maps
   const profileMap = useMemo(() => {
     const m: Record<string, Profile> = {};
     profiles.forEach(p => { m[p.id] = p; });
     return m;
   }, [profiles]);
 
-  // Apply filters
   const filtered = useMemo(() => {
     return feedbackData.filter(f => {
       if (sentimentFilter !== 'all' && f.sentiment !== sentimentFilter) return false;
@@ -116,34 +104,12 @@ export default function Dashboard() {
     });
   }, [feedbackData, sentimentFilter, employeeFilter, teamFilter, profileMap]);
 
-  // KPI
   const totalCount = filtered.length;
   const positiveCount = filtered.filter(f => f.sentiment === 'positive').length;
   const negativeCount = filtered.filter(f => f.sentiment === 'negative').length;
   const positiveRatio = totalCount > 0 ? Math.round((positiveCount / totalCount) * 100) : 0;
 
-  // Time series
-  const timeSeries = useMemo(() => {
-    const buckets: Record<string, { positive: number; negative: number }> = {};
-    const useMonths = ['3m', '6m', '1y'].includes(period);
-    
-    filtered.forEach(f => {
-      const d = parseISO(f.created_at);
-      const key = useMonths
-        ? format(d, 'yyyy-MM')
-        : format(startOfWeek(d, { locale: ru }), 'yyyy-MM-dd');
-      if (!buckets[key]) buckets[key] = { positive: 0, negative: 0 };
-      buckets[key][f.sentiment as 'positive' | 'negative']++;
-    });
-
-    return Object.entries(buckets)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, val]) => ({
-        period: useMonths ? format(parseISO(key + '-01'), 'MMM yyyy', { locale: ru }) : format(parseISO(key), 'dd MMM', { locale: ru }),
-        Позитивные: val.positive,
-        Негативные: val.negative,
-      }));
-  }, [filtered, period]);
+  const timeGranularity: 'week' | 'month' = ['3m', '6m', '1y'].includes(period) ? 'month' : 'week';
 
   // Top subcategories
   const topSubcats = useMemo(() => {
@@ -153,19 +119,8 @@ export default function Dashboard() {
       if (!feedbackIds.has(fs.feedback_id)) return;
       counts[fs.subcategory_id] = (counts[fs.subcategory_id] || 0) + 1;
     });
-    
-    const positive = Object.entries(counts)
-      .filter(([id]) => subcatMap[id]?.sentiment === 'positive')
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([id, count]) => ({ name: subcatMap[id]?.name || id, count }));
-    
-    const negative = Object.entries(counts)
-      .filter(([id]) => subcatMap[id]?.sentiment === 'negative')
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([id, count]) => ({ name: subcatMap[id]?.name || id, count }));
-    
+    const positive = Object.entries(counts).filter(([id]) => subcatMap[id]?.sentiment === 'positive').sort((a, b) => b[1] - a[1]).slice(0, 10).map(([id, count]) => ({ name: subcatMap[id]?.name || id, count }));
+    const negative = Object.entries(counts).filter(([id]) => subcatMap[id]?.sentiment === 'negative').sort((a, b) => b[1] - a[1]).slice(0, 10).map(([id, count]) => ({ name: subcatMap[id]?.name || id, count }));
     return { positive, negative };
   }, [filtered, feedbackSubs, subcatMap]);
 
@@ -173,13 +128,11 @@ export default function Dashboard() {
   const recipientsTable = useMemo(() => {
     const data: Record<string, { total: number; positive: number; negative: number; subcats: Record<string, number> }> = {};
     const feedbackIds = new Set(filtered.map(f => f.id));
-
     filtered.forEach(f => {
       if (!data[f.to_user_id]) data[f.to_user_id] = { total: 0, positive: 0, negative: 0, subcats: {} };
       data[f.to_user_id].total++;
       data[f.to_user_id][f.sentiment as 'positive' | 'negative']++;
     });
-
     feedbackSubs.forEach(fs => {
       if (!feedbackIds.has(fs.feedback_id)) return;
       const fb = filtered.find(f => f.id === fs.feedback_id);
@@ -187,71 +140,40 @@ export default function Dashboard() {
       const name = subcatMap[fs.subcategory_id]?.name || '';
       data[fb.to_user_id].subcats[name] = (data[fb.to_user_id].subcats[name] || 0) + 1;
     });
-
     return Object.entries(data)
-      .map(([userId, d]) => ({
-        userId,
-        name: profileMap[userId]?.full_name || userId,
-        ...d,
-        topSubcats: Object.entries(d.subcats).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([n]) => n),
-      }))
+      .map(([userId, d]) => ({ userId, name: profileMap[userId]?.full_name || userId, ...d, topSubcats: Object.entries(d.subcats).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([n]) => n) }))
       .sort((a, b) => b.total - a.total);
   }, [filtered, feedbackSubs, subcatMap, profileMap]);
 
-  // Export CSV
+  const graphEdges = useMemo(() => filtered.map(f => ({ from: f.from_user_id, to: f.to_user_id, sentiment: f.sentiment, created_at: f.created_at })), [filtered]);
+
   function exportRawCSV() {
     const feedbackIds = new Set(filtered.map(f => f.id));
     const subsByFb: Record<string, string[]> = {};
-    feedbackSubs.forEach(fs => {
-      if (!feedbackIds.has(fs.feedback_id)) return;
-      if (!subsByFb[fs.feedback_id]) subsByFb[fs.feedback_id] = [];
-      subsByFb[fs.feedback_id].push(subcatMap[fs.subcategory_id]?.name || '');
-    });
-
+    feedbackSubs.forEach(fs => { if (!feedbackIds.has(fs.feedback_id)) return; if (!subsByFb[fs.feedback_id]) subsByFb[fs.feedback_id] = []; subsByFb[fs.feedback_id].push(subcatMap[fs.subcategory_id]?.name || ''); });
     const header = 'Дата,Эпизод,Команда,Получатель,Тональность,Подкатегории,Комментарий';
     const rows = filtered.map(f => {
       const prof = profileMap[f.to_user_id];
       const team = prof?.team_id ? teams.find(t => t.id === prof.team_id)?.name || '' : '';
-      return [
-        format(parseISO(f.created_at), 'yyyy-MM-dd'),
-        `"${episodes[f.episode_id] || ''}"`,
-        `"${team}"`,
-        `"${prof?.full_name || ''}"`,
-        f.sentiment === 'positive' ? 'Позитивный' : 'Негативный',
-        `"${(subsByFb[f.id] || []).join('; ')}"`,
-        `"${f.comment.replace(/"/g, '""')}"`,
-      ].join(',');
+      return [format(parseISO(f.created_at), 'yyyy-MM-dd'), `"${episodes[f.episode_id] || ''}"`, `"${team}"`, `"${prof?.full_name || ''}"`, f.sentiment === 'positive' ? 'Позитивный' : 'Негативный', `"${(subsByFb[f.id] || []).join('; ')}"`, `"${f.comment.replace(/"/g, '""')}"`].join(',');
     });
-
     downloadCSV([header, ...rows].join('\n'), 'feedback_raw.csv');
   }
 
   function exportAggCSV() {
-    const header = 'Получатель,Команда,Всего,Позитивных,Негативных,Топ позитивные,Топ негативные';
+    const header = 'Получатель,Команда,Всего,Позитивных,Негативных,Топ подкатегории';
     const rows = recipientsTable.map(r => {
       const prof = profileMap[r.userId];
       const team = prof?.team_id ? teams.find(t => t.id === prof.team_id)?.name || '' : '';
-      return [
-        `"${r.name}"`,
-        `"${team}"`,
-        r.total,
-        r.positive,
-        r.negative,
-        `"${r.topSubcats.join('; ')}"`,
-        '',
-      ].join(',');
+      return [`"${r.name}"`, `"${team}"`, r.total, r.positive, r.negative, `"${r.topSubcats.join('; ')}"`].join(',');
     });
     downloadCSV([header, ...rows].join('\n'), 'feedback_aggregated.csv');
   }
 
   function downloadCSV(content: string, filename: string) {
-    const bom = '\uFEFF';
-    const blob = new Blob([bom + content], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
+    const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
     URL.revokeObjectURL(url);
   }
 
@@ -264,12 +186,8 @@ export default function Dashboard() {
             <p className="text-muted-foreground">Аналитика обратной связи</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={exportRawCSV} className="gap-1">
-              <Download size={14} /> Сырой CSV
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportAggCSV} className="gap-1">
-              <Download size={14} /> Агрегат CSV
-            </Button>
+            <Button variant="outline" size="sm" onClick={exportRawCSV} className="gap-1"><Download size={14} /> Сырой CSV</Button>
+            <Button variant="outline" size="sm" onClick={exportAggCSV} className="gap-1"><Download size={14} /> Агрегат CSV</Button>
           </div>
         </div>
 
@@ -281,11 +199,7 @@ export default function Dashboard() {
                 <Label className="text-xs text-muted-foreground">Период</Label>
                 <Select value={period} onValueChange={v => setPeriod(v as PeriodPreset)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(periodLabels).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
-                    ))}
-                  </SelectContent>
+                  <SelectContent>{Object.entries(periodLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div>
@@ -325,82 +239,22 @@ export default function Dashboard() {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-5">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10"><MessageSquare size={18} className="text-primary" /></div>
-                <div>
-                  <p className="text-2xl font-bold">{totalCount}</p>
-                  <p className="text-xs text-muted-foreground">Всего отзывов</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-5">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-positive/10"><TrendingUp size={18} className="text-positive" /></div>
-                <div>
-                  <p className="text-2xl font-bold">{positiveCount}</p>
-                  <p className="text-xs text-muted-foreground">Позитивных</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-5">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-negative/10"><TrendingDown size={18} className="text-negative" /></div>
-                <div>
-                  <p className="text-2xl font-bold">{negativeCount}</p>
-                  <p className="text-xs text-muted-foreground">Негативных</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-5">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10"><BarChart3 size={18} className="text-primary" /></div>
-                <div>
-                  <p className="text-2xl font-bold">{positiveRatio}%</p>
-                  <p className="text-xs text-muted-foreground">Позитивных</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-primary/10"><MessageSquare size={18} className="text-primary" /></div><div><p className="text-2xl font-bold">{totalCount}</p><p className="text-xs text-muted-foreground">Всего отзывов</p></div></div></CardContent></Card>
+          <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-positive/10"><TrendingUp size={18} className="text-positive" /></div><div><p className="text-2xl font-bold">{positiveCount}</p><p className="text-xs text-muted-foreground">Позитивных</p></div></div></CardContent></Card>
+          <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-negative/10"><TrendingDown size={18} className="text-negative" /></div><div><p className="text-2xl font-bold">{negativeCount}</p><p className="text-xs text-muted-foreground">Негативных</p></div></div></CardContent></Card>
+          <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-primary/10"><BarChart3 size={18} className="text-primary" /></div><div><p className="text-2xl font-bold">{positiveRatio}%</p><p className="text-xs text-muted-foreground">Позитивных</p></div></div></CardContent></Card>
         </div>
 
-        {/* Time series chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Динамика по времени</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {timeSeries.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={timeSeries}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="period" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="Позитивные" fill="hsl(var(--positive))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Негативные" fill="hsl(var(--negative))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-center text-muted-foreground py-10">Нет данных за выбранный период</p>
-            )}
-          </CardContent>
-        </Card>
+        {/* Sentiment Timeline (Area chart) */}
+        <SentimentTimeline data={filtered} granularity={timeGranularity} />
+
+        {/* Employee Bar Chart */}
+        <EmployeeBarChart profiles={profiles} feedbackEdges={graphEdges} />
 
         {/* Top subcategories */}
         <div className="grid md:grid-cols-2 gap-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base text-positive">Топ позитивных подкатегорий</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-base text-positive">Топ позитивных подкатегорий</CardTitle></CardHeader>
             <CardContent>
               {topSubcats.positive.length > 0 ? (
                 <ResponsiveContainer width="100%" height={250}>
@@ -416,9 +270,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base text-negative">Топ негативных подкатегорий</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-base text-negative">Топ негативных подкатегорий</CardTitle></CardHeader>
             <CardContent>
               {topSubcats.negative.length > 0 ? (
                 <ResponsiveContainer width="100%" height={250}>
@@ -437,9 +289,7 @@ export default function Dashboard() {
 
         {/* Recipients table */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Получатели (агрегат)</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-base">Получатели (агрегат)</CardTitle></CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
@@ -458,26 +308,16 @@ export default function Dashboard() {
                     <TableCell className="text-center">{r.total}</TableCell>
                     <TableCell className="text-center text-positive font-medium">{r.positive}</TableCell>
                     <TableCell className="text-center text-negative font-medium">{r.negative}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1 flex-wrap">
-                        {r.topSubcats.map(s => (
-                          <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
-                        ))}
-                      </div>
-                    </TableCell>
+                    <TableCell><div className="flex gap-1 flex-wrap">{r.topSubcats.map(s => <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>)}</div></TableCell>
                   </TableRow>
                 ))}
-                {recipientsTable.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">Нет данных</TableCell>
-                  </TableRow>
-                )}
+                {recipientsTable.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Нет данных</TableCell></TableRow>}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
 
-        {/* Comments toggle */}
+        {/* Comments */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -494,9 +334,7 @@ export default function Dashboard() {
                 {filtered.map(f => (
                   <div key={f.id} className="p-3 rounded-lg bg-muted/50 text-sm">
                     <div className="flex items-center gap-2 mb-1">
-                      <Badge variant={f.sentiment === 'positive' ? 'default' : 'destructive'} className={cn("text-xs", f.sentiment === 'positive' && 'bg-positive')}>
-                        {f.sentiment === 'positive' ? 'Позитивный' : 'Негативный'}
-                      </Badge>
+                      <Badge variant={f.sentiment === 'positive' ? 'default' : 'destructive'} className={cn("text-xs", f.sentiment === 'positive' && 'bg-positive')}>{f.sentiment === 'positive' ? 'Позитивный' : 'Негативный'}</Badge>
                       <span className="text-xs text-muted-foreground">{format(parseISO(f.created_at), 'dd.MM.yyyy')}</span>
                       <span className="text-xs text-muted-foreground">→ {profileMap[f.to_user_id]?.full_name}</span>
                       <span className="text-xs text-muted-foreground">({episodes[f.episode_id] || ''})</span>
@@ -504,13 +342,18 @@ export default function Dashboard() {
                     <p className="text-foreground">{f.comment}</p>
                   </div>
                 ))}
-                {filtered.length === 0 && (
-                  <p className="text-center text-muted-foreground py-4">Нет комментариев</p>
-                )}
+                {filtered.length === 0 && <p className="text-center text-muted-foreground py-4">Нет комментариев</p>}
               </div>
             </CardContent>
           )}
         </Card>
+
+        {/* Relationship Graph */}
+        <RelationshipGraph profiles={profiles} feedbackEdges={graphEdges} />
+
+        {/* Heatmap */}
+        <InteractionHeatmap profiles={profiles} feedbackEdges={graphEdges} />
+
       </div>
     </AppLayout>
   );

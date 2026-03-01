@@ -10,19 +10,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { CheckCircle2, Plus, ThumbsUp, ThumbsDown, AlertCircle } from 'lucide-react';
+
+import { CheckCircle2, Plus, AlertCircle, Search, X, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Profile, WorkEpisode, Subcategory, SentimentType } from '@/lib/supabase-types';
+
+interface SubcategoryExt extends Subcategory {
+  is_critical: boolean;
+}
 
 export default function FeedbackForm() {
   const { user } = useAuth();
   const [episodes, setEpisodes] = useState<WorkEpisode[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
+  const [subcategories, setSubcategories] = useState<SubcategoryExt[]>([]);
   
   const [episodeId, setEpisodeId] = useState('');
   const [toUserId, setToUserId] = useState('');
-  const [sentiment, setSentiment] = useState<SentimentType | ''>('');
   const [selectedSubs, setSelectedSubs] = useState<string[]>([]);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -31,15 +35,15 @@ export default function FeedbackForm() {
   const [existingFeedbackId, setExistingFeedbackId] = useState<string | null>(null);
   const [isUpdate, setIsUpdate] = useState(false);
   
-  // New episode dialog
+  const [userSearch, setUserSearch] = useState('');
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+
   const [newEpOpen, setNewEpOpen] = useState(false);
   const [newEpTitle, setNewEpTitle] = useState('');
   const [newEpDate, setNewEpDate] = useState(new Date().toISOString().split('T')[0]);
   const [newEpDesc, setNewEpDesc] = useState('');
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   async function loadData() {
     const [epRes, profRes, subRes] = await Promise.all([
@@ -49,10 +53,9 @@ export default function FeedbackForm() {
     ]);
     if (epRes.data) setEpisodes(epRes.data as unknown as WorkEpisode[]);
     if (profRes.data) setProfiles(profRes.data as unknown as Profile[]);
-    if (subRes.data) setSubcategories(subRes.data as unknown as Subcategory[]);
+    if (subRes.data) setSubcategories(subRes.data as unknown as SubcategoryExt[]);
   }
 
-  // Check existing feedback when episode + recipient selected
   useEffect(() => {
     if (!episodeId || !toUserId || !user) return;
     checkExisting();
@@ -70,9 +73,7 @@ export default function FeedbackForm() {
     if (data) {
       setExistingFeedbackId(data.id);
       setIsUpdate(true);
-      setSentiment(data.sentiment as SentimentType);
       setComment(data.comment);
-      // Load existing subcategories
       const { data: subs } = await supabase
         .from('feedback_subcategories')
         .select('subcategory_id')
@@ -84,15 +85,18 @@ export default function FeedbackForm() {
     }
   }
 
-  const filteredSubs = useMemo(
-    () => subcategories.filter(s => sentiment && s.sentiment === sentiment),
-    [subcategories, sentiment]
-  );
+  const otherUsers = useMemo(() => profiles.filter(p => p.id !== user?.id), [profiles, user]);
+  const filteredUsers = useMemo(() => otherUsers.filter(p => p.full_name.toLowerCase().includes(userSearch.toLowerCase())), [otherUsers, userSearch]);
+  const selectedUser = useMemo(() => profiles.find(p => p.id === toUserId), [profiles, toUserId]);
 
-  const otherUsers = useMemo(
-    () => profiles.filter(p => p.id !== user?.id),
-    [profiles, user]
-  );
+  // Separate normal vs critical subcategories
+  const normalSubcats = useMemo(() => subcategories.filter(s => !s.is_critical), [subcategories]);
+  const criticalSubcats = useMemo(() => subcategories.filter(s => s.is_critical), [subcategories]);
+
+  // Check if any critical subcategory is selected
+  const hasCriticalSelected = useMemo(() => {
+    return selectedSubs.some(id => criticalSubcats.some(cs => cs.id === id));
+  }, [selectedSubs, criticalSubcats]);
 
   function toggleSub(id: string) {
     setSelectedSubs(prev => {
@@ -102,7 +106,17 @@ export default function FeedbackForm() {
     });
   }
 
-  const isValid = episodeId && toUserId && sentiment && selectedSubs.length >= 1 && selectedSubs.length <= 3 && comment.length >= 10 && comment.length <= 500;
+  const derivedSentiment = useMemo((): SentimentType => {
+    if (selectedSubs.length === 0) return 'positive';
+    const posCount = selectedSubs.filter(id => {
+      const sub = subcategories.find(s => s.id === id);
+      return sub?.sentiment === 'positive';
+    }).length;
+    return posCount >= selectedSubs.length / 2 ? 'positive' : 'negative';
+  }, [selectedSubs, subcategories]);
+
+  const minCommentLength = hasCriticalSelected ? 50 : 10;
+  const isValid = episodeId && toUserId && selectedSubs.length >= 1 && selectedSubs.length <= 3 && comment.length >= minCommentLength && comment.length <= 500;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -111,29 +125,31 @@ export default function FeedbackForm() {
     setError('');
 
     try {
+      const feedbackPayload: any = {
+        sentiment: derivedSentiment,
+        comment,
+        is_critical: hasCriticalSelected,
+      };
+
       if (isUpdate && existingFeedbackId) {
-        // Update existing
         const { error: updateErr } = await supabase
           .from('feedback')
-          .update({ sentiment, comment })
+          .update(feedbackPayload)
           .eq('id', existingFeedbackId);
         if (updateErr) throw updateErr;
 
-        // Delete old subcategories and insert new
         await supabase.from('feedback_subcategories').delete().eq('feedback_id', existingFeedbackId);
         const subInserts = selectedSubs.map(sid => ({ feedback_id: existingFeedbackId, subcategory_id: sid }));
         const { error: subErr } = await supabase.from('feedback_subcategories').insert(subInserts);
         if (subErr) throw subErr;
       } else {
-        // Insert new
         const { data: fb, error: fbErr } = await supabase
           .from('feedback')
           .insert({
             episode_id: episodeId,
             from_user_id: user.id,
             to_user_id: toUserId,
-            sentiment,
-            comment,
+            ...feedbackPayload,
           })
           .select('id')
           .single();
@@ -168,14 +184,8 @@ export default function FeedbackForm() {
   }
 
   function resetForm() {
-    setEpisodeId('');
-    setToUserId('');
-    setSentiment('');
-    setSelectedSubs([]);
-    setComment('');
-    setSubmitted(false);
-    setExistingFeedbackId(null);
-    setIsUpdate(false);
+    setEpisodeId(''); setToUserId(''); setSelectedSubs([]); setComment('');
+    setSubmitted(false); setExistingFeedbackId(null); setIsUpdate(false); setUserSearch('');
   }
 
   if (submitted) {
@@ -186,9 +196,7 @@ export default function FeedbackForm() {
             <CheckCircle2 size={32} className="text-positive" />
           </div>
           <h2 className="text-2xl font-bold mb-2">Спасибо!</h2>
-          <p className="text-muted-foreground mb-6">
-            {isUpdate ? 'Ваш отзыв обновлён.' : 'Ваш отзыв успешно отправлен.'}
-          </p>
+          <p className="text-muted-foreground mb-6">{isUpdate ? 'Ваш отзыв обновлён.' : 'Отзыв успешно отправлен.'}</p>
           <Button onClick={resetForm}>Отправить ещё</Button>
         </div>
       </AppLayout>
@@ -204,8 +212,7 @@ export default function FeedbackForm() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-              <AlertCircle size={16} />
-              {error}
+              <AlertCircle size={16} />{error}
             </div>
           )}
 
@@ -216,48 +223,37 @@ export default function FeedbackForm() {
             </div>
           )}
 
+          {/* Critical incident warning */}
+          {hasCriticalSelected && (
+            <div className="flex items-start gap-2 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm">
+              <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-semibold">⚠️ Вы указываете серьёзное нарушение</p>
+                <p className="mt-1">Это будет зафиксировано отдельно и будет видно только HR и администраторам. Комментарий обязателен (минимум 50 символов).</p>
+              </div>
+            </div>
+          )}
+
           {/* Episode */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Контекст (эпизод / задача)</CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Контекст (эпизод / задача)</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <Select value={episodeId} onValueChange={setEpisodeId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите эпизод" />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Выберите эпизод" /></SelectTrigger>
                 <SelectContent>
-                  {episodes.map(ep => (
-                    <SelectItem key={ep.id} value={ep.id}>
-                      {ep.title} ({ep.date})
-                    </SelectItem>
-                  ))}
+                  {episodes.map(ep => <SelectItem key={ep.id} value={ep.id}>{ep.title} ({ep.date})</SelectItem>)}
                 </SelectContent>
               </Select>
-              
               <Dialog open={newEpOpen} onOpenChange={setNewEpOpen}>
                 <DialogTrigger asChild>
-                  <Button type="button" variant="outline" size="sm" className="gap-1">
-                    <Plus size={14} /> Создать новый эпизод
-                  </Button>
+                  <Button type="button" variant="outline" size="sm" className="gap-1"><Plus size={14} /> Создать новый эпизод</Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Новый эпизод</DialogTitle>
-                  </DialogHeader>
+                  <DialogHeader><DialogTitle>Новый эпизод</DialogTitle></DialogHeader>
                   <div className="space-y-4">
-                    <div>
-                      <Label>Название</Label>
-                      <Input value={newEpTitle} onChange={e => setNewEpTitle(e.target.value)} placeholder="Спринт 15, Ретро, Релиз..." />
-                    </div>
-                    <div>
-                      <Label>Дата</Label>
-                      <Input type="date" value={newEpDate} onChange={e => setNewEpDate(e.target.value)} />
-                    </div>
-                    <div>
-                      <Label>Описание (необязательно)</Label>
-                      <Textarea value={newEpDesc} onChange={e => setNewEpDesc(e.target.value)} />
-                    </div>
+                    <div><Label>Название</Label><Input value={newEpTitle} onChange={e => setNewEpTitle(e.target.value)} placeholder="Спринт 15, Ретро, Релиз..." /></div>
+                    <div><Label>Дата</Label><Input type="date" value={newEpDate} onChange={e => setNewEpDate(e.target.value)} /></div>
+                    <div><Label>Описание (необязательно)</Label><Textarea value={newEpDesc} onChange={e => setNewEpDesc(e.target.value)} /></div>
                     <Button onClick={handleCreateEpisode} disabled={!newEpTitle.trim()}>Создать</Button>
                   </div>
                 </DialogContent>
@@ -267,108 +263,81 @@ export default function FeedbackForm() {
 
           {/* Recipient */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Кому</CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Кому</CardTitle></CardHeader>
             <CardContent>
-              <Select value={toUserId} onValueChange={setToUserId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите сотрудника" />
-                </SelectTrigger>
-                <SelectContent>
-                  {otherUsers.map(u => (
-                    <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {selectedUser ? (
+                <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
+                  <span className="font-medium flex-1">{selectedUser.full_name}</span>
+                  <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => { setToUserId(''); setUserSearch(''); }}><X size={14} /></Button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={userSearch} onChange={e => { setUserSearch(e.target.value); if (!userDropdownOpen) setUserDropdownOpen(true); }} onFocus={() => setUserDropdownOpen(true)} onBlur={() => setTimeout(() => setUserDropdownOpen(false), 200)} placeholder="Начните вводить имя сотрудника..." className="pl-9" autoComplete="off" />
+                  {userDropdownOpen && (
+                    <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg max-h-52 overflow-y-auto">
+                      {filteredUsers.length > 0 ? filteredUsers.map(u => (
+                        <button key={u.id} type="button" className="w-full text-left px-3 py-2.5 text-sm hover:bg-accent transition-colors" onMouseDown={e => e.preventDefault()} onClick={() => { setToUserId(u.id); setUserSearch(''); setUserDropdownOpen(false); }}>{u.full_name}</button>
+                      )) : <p className="text-sm text-muted-foreground p-3">Сотрудник не найден</p>}
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Sentiment */}
+          {/* Normal Subcategories */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Тип отзыва</CardTitle>
+              <CardTitle className="text-base">Подкатегории <span className="text-muted-foreground font-normal">(1–3)</span></CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => { setSentiment('positive'); setSelectedSubs([]); }}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all font-medium",
-                    sentiment === 'positive'
-                      ? "border-positive bg-positive/10 text-positive"
-                      : "border-border hover:border-positive/40"
-                  )}
-                >
-                  <ThumbsUp size={20} /> Позитивный
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setSentiment('negative'); setSelectedSubs([]); }}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all font-medium",
-                    sentiment === 'negative'
-                      ? "border-negative bg-negative/10 text-negative"
-                      : "border-border hover:border-negative/40"
-                  )}
-                >
-                  <ThumbsDown size={20} /> Негативный
-                </button>
+              <div className="flex flex-wrap gap-2">
+                {normalSubcats.map(sub => (
+                  <Badge key={sub.id} variant={selectedSubs.includes(sub.id) ? 'default' : 'outline'}
+                    className={cn("cursor-pointer text-sm py-1.5 px-3 transition-all",
+                      selectedSubs.includes(sub.id) ? sub.sentiment === 'positive' ? 'bg-positive hover:bg-positive/90' : 'bg-negative hover:bg-negative/90' : 'hover:bg-muted',
+                      selectedSubs.length >= 3 && !selectedSubs.includes(sub.id) && 'opacity-40 cursor-not-allowed'
+                    )}
+                    onClick={() => toggleSub(sub.id)}>{sub.name}</Badge>
+                ))}
+              </div>
+              {selectedSubs.length === 0 && <p className="text-xs text-muted-foreground mt-2">Выберите хотя бы одну подкатегорию</p>}
+            </CardContent>
+          </Card>
+
+          {/* Critical Subcategories */}
+          <Card className="border-destructive/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertTriangle size={16} className="text-destructive" />
+                Серьёзные нарушения
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {criticalSubcats.map(sub => (
+                  <Badge key={sub.id} variant={selectedSubs.includes(sub.id) ? 'default' : 'outline'}
+                    className={cn("cursor-pointer text-sm py-1.5 px-3 transition-all",
+                      selectedSubs.includes(sub.id) ? 'bg-destructive hover:bg-destructive/90' : 'hover:bg-destructive/10 border-destructive/30',
+                      selectedSubs.length >= 3 && !selectedSubs.includes(sub.id) && 'opacity-40 cursor-not-allowed'
+                    )}
+                    onClick={() => toggleSub(sub.id)}>{sub.name}</Badge>
+                ))}
               </div>
             </CardContent>
           </Card>
 
-          {/* Subcategories */}
-          {sentiment && (
-            <Card className="animate-fade-in">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">
-                  Подкатегории <span className="text-muted-foreground font-normal">(1–3)</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {filteredSubs.map(sub => (
-                    <Badge
-                      key={sub.id}
-                      variant={selectedSubs.includes(sub.id) ? 'default' : 'outline'}
-                      className={cn(
-                        "cursor-pointer text-sm py-1.5 px-3 transition-all",
-                        selectedSubs.includes(sub.id)
-                          ? sentiment === 'positive' ? 'bg-positive hover:bg-positive/90' : 'bg-negative hover:bg-negative/90'
-                          : 'hover:bg-muted',
-                        selectedSubs.length >= 3 && !selectedSubs.includes(sub.id) && 'opacity-40 cursor-not-allowed'
-                      )}
-                      onClick={() => toggleSub(sub.id)}
-                    >
-                      {sub.name}
-                    </Badge>
-                  ))}
-                </div>
-                {selectedSubs.length === 0 && (
-                  <p className="text-xs text-muted-foreground mt-2">Выберите хотя бы одну подкатегорию</p>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
           {/* Comment */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Комментарий</CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Комментарий</CardTitle></CardHeader>
             <CardContent>
-              <Textarea
-                value={comment}
-                onChange={e => setComment(e.target.value)}
-                placeholder="Опишите ситуацию подробнее (минимум 10 символов)..."
-                rows={4}
-                maxLength={500}
-              />
+              <Textarea value={comment} onChange={e => setComment(e.target.value)}
+                placeholder={hasCriticalSelected ? "Опишите ситуацию подробно (минимум 50 символов)..." : "Опишите ситуацию подробнее (минимум 10 символов)..."}
+                rows={4} maxLength={500} />
               <div className="flex justify-between mt-1.5">
-                <span className={cn("text-xs", comment.length < 10 ? "text-destructive" : "text-muted-foreground")}>
-                  {comment.length < 10 ? `Минимум 10 символов` : ''}
+                <span className={cn("text-xs", comment.length < minCommentLength ? "text-destructive" : "text-muted-foreground")}>
+                  {comment.length < minCommentLength ? `Минимум ${minCommentLength} символов` : ''}
                 </span>
                 <span className="text-xs text-muted-foreground">{comment.length}/500</span>
               </div>
@@ -376,7 +345,7 @@ export default function FeedbackForm() {
           </Card>
 
           <Button type="submit" size="lg" className="w-full" disabled={!isValid || submitting}>
-            {submitting ? 'Отправка...' : isUpdate ? 'Обновить отзыв' : 'Отправить отзыв'}
+            {submitting ? 'Отправка...' : isUpdate ? 'Обновить отзыв' : hasCriticalSelected ? '⚠️ Отправить отзыв о нарушении' : 'Отправить отзыв'}
           </Button>
         </form>
       </div>

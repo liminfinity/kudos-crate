@@ -21,6 +21,7 @@ export type Database = {
           episode_id: string
           from_user_id: string
           id: string
+          is_critical: boolean
           sentiment: Database["public"]["Enums"]["sentiment_type"]
           to_user_id: string
           updated_at: string
@@ -31,6 +32,7 @@ export type Database = {
           episode_id: string
           from_user_id: string
           id?: string
+          is_critical?: boolean
           sentiment: Database["public"]["Enums"]["sentiment_type"]
           to_user_id: string
           updated_at?: string
@@ -41,6 +43,7 @@ export type Database = {
           episode_id?: string
           from_user_id?: string
           id?: string
+          is_critical?: boolean
           sentiment?: Database["public"]["Enums"]["sentiment_type"]
           to_user_id?: string
           updated_at?: string
@@ -85,6 +88,33 @@ export type Database = {
           },
         ]
       }
+      kudos: {
+        Row: {
+          category: Database["public"]["Enums"]["kudos_category"]
+          comment: string | null
+          created_at: string
+          from_user_id: string
+          id: string
+          to_user_id: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["kudos_category"]
+          comment?: string | null
+          created_at?: string
+          from_user_id: string
+          id?: string
+          to_user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["kudos_category"]
+          comment?: string | null
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          to_user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -128,6 +158,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          is_critical: boolean
           name: string
           sentiment: Database["public"]["Enums"]["sentiment_type"]
           sort_order: number | null
@@ -137,6 +168,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          is_critical?: boolean
           name: string
           sentiment: Database["public"]["Enums"]["sentiment_type"]
           sort_order?: number | null
@@ -146,10 +178,165 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          is_critical?: boolean
           name?: string
           sentiment?: Database["public"]["Enums"]["sentiment_type"]
           sort_order?: number | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      survey_assignments: {
+        Row: {
+          created_at: string
+          cycle_id: string
+          id: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["assignment_status"]
+          submitted_at: string | null
+          team_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          cycle_id: string
+          id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["assignment_status"]
+          submitted_at?: string | null
+          team_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          cycle_id?: string
+          id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["assignment_status"]
+          submitted_at?: string | null
+          team_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_assignments_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "survey_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_assignments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_cycles: {
+        Row: {
+          created_at: string
+          due_date: string
+          id: string
+          label: string
+          open_from: string
+          period_end: string
+          period_start: string
+          status: Database["public"]["Enums"]["survey_status"]
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          due_date: string
+          id?: string
+          label: string
+          open_from: string
+          period_end: string
+          period_start: string
+          status?: Database["public"]["Enums"]["survey_status"]
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string
+          id?: string
+          label?: string
+          open_from?: string
+          period_end?: string
+          period_start?: string
+          status?: Database["public"]["Enums"]["survey_status"]
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_cycles_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "survey_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_responses: {
+        Row: {
+          answers_json: Json
+          assignment_id: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          answers_json?: Json
+          assignment_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          answers_json?: Json
+          assignment_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_responses_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "survey_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_templates: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          schema_json: Json
+          type: Database["public"]["Enums"]["survey_type"]
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          schema_json?: Json
+          type: Database["public"]["Enums"]["survey_type"]
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          schema_json?: Json
+          type?: Database["public"]["Enums"]["survey_type"]
+          version?: number
         }
         Relationships: []
       }
@@ -253,7 +440,17 @@ export type Database = {
     }
     Enums: {
       app_role: "employee" | "manager" | "hr" | "admin"
+      assignment_status: "not_started" | "in_progress" | "submitted" | "overdue"
+      kudos_category:
+        | "helped_understand"
+        | "emotional_support"
+        | "saved_deadline"
+        | "shared_expertise"
+        | "mentoring"
+        | "team_support"
       sentiment_type: "positive" | "negative"
+      survey_status: "draft" | "open" | "closed"
+      survey_type: "half_year_employee" | "bi_month_manager"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -382,7 +579,18 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["employee", "manager", "hr", "admin"],
+      assignment_status: ["not_started", "in_progress", "submitted", "overdue"],
+      kudos_category: [
+        "helped_understand",
+        "emotional_support",
+        "saved_deadline",
+        "shared_expertise",
+        "mentoring",
+        "team_support",
+      ],
       sentiment_type: ["positive", "negative"],
+      survey_status: ["draft", "open", "closed"],
+      survey_type: ["half_year_employee", "bi_month_manager"],
     },
   },
 } as const
