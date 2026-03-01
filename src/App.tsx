@@ -21,6 +21,9 @@ import CompanyMood from "./pages/CompanyMood";
 import CriticalIncidents from "./pages/CriticalIncidents";
 import KudosForm from "./pages/KudosForm";
 import KudosDashboard from "./pages/KudosDashboard";
+import SatisfactionAnalytics from "./pages/SatisfactionAnalytics";
+import EngagementAnalytics from "./pages/EngagementAnalytics";
+import Recommendations from "./pages/Recommendations";
 import NotFound from "./pages/NotFound";
 import { AssistantMira } from "./components/AssistantMira";
 
@@ -54,6 +57,9 @@ const App = () => (
             <Route path="/leader-diary" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><LeaderDiaryList /></ProtectedRoute>} />
             <Route path="/leader-diary/:assignmentId" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><LeaderDiaryForm /></ProtectedRoute>} />
             <Route path="/analytics/half-year" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><SurveyAnalytics /></ProtectedRoute>} />
+            <Route path="/satisfaction" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><SatisfactionAnalytics /></ProtectedRoute>} />
+            <Route path="/engagement" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><EngagementAnalytics /></ProtectedRoute>} />
+            <Route path="/recommendations" element={<ProtectedRoute><Recommendations /></ProtectedRoute>} />
             <Route path="/incidents" element={<ProtectedRoute allowedRoles={['hr', 'admin']}><CriticalIncidents /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute>} />
             <Route path="/admin/teams" element={<ProtectedRoute allowedRoles={['admin']}><AdminTeams /></ProtectedRoute>} />

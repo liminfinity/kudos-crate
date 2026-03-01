@@ -17,6 +17,9 @@ import {
   Heart,
   Award,
   Menu,
+  ThumbsUp,
+  Zap,
+  Lightbulb,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
@@ -37,6 +40,9 @@ const navItems: NavItem[] = [
   { label: 'Атмосфера', path: '/mood', icon: <Activity size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
   { label: 'Аналитика', path: '/dashboard', icon: <BarChart3 size={18} />, roles: ['manager', 'hr', 'admin'] },
   { label: 'Благодарности (обзор)', path: '/kudos/dashboard', icon: <Award size={18} />, roles: ['manager', 'hr', 'admin'] },
+  { label: 'Удовлетворённость', path: '/satisfaction', icon: <ThumbsUp size={18} />, roles: ['manager', 'hr', 'admin'] },
+  { label: 'Вовлечённость', path: '/engagement', icon: <Zap size={18} />, roles: ['manager', 'hr', 'admin'] },
+  { label: 'Рекомендации', path: '/recommendations', icon: <Lightbulb size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
   { label: 'Полугодовой срез', path: '/analytics/half-year', icon: <PieChart size={18} />, roles: ['manager', 'hr', 'admin'] },
   { label: 'Дневник руководителя', path: '/leader-diary', icon: <BookOpen size={18} />, roles: ['manager', 'hr', 'admin'] },
   { label: 'Серьёзные сигналы', path: '/incidents', icon: <AlertTriangle size={18} />, roles: ['hr', 'admin'] },
