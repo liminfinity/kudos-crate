@@ -193,7 +193,6 @@ export default function SurveyAnalytics() {
   const PIE_COLORS = ['hsl(152, 56%, 40%)', 'hsl(35, 80%, 55%)', 'hsl(4, 60%, 55%)', 'hsl(4, 76%, 45%)'];
 
   return (
-    <AppLayout>
       <div className="space-y-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -381,7 +380,6 @@ export default function SurveyAnalytics() {
             </CardContent>
           </Card>
         )}
-      </div>
-    </AppLayout>
+    </div>
   );
 }

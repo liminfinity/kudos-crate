@@ -56,7 +56,6 @@ export default function LeaderDiaryList() {
   const profileMap = Object.fromEntries(profiles.map(p => [p.id, p]));
 
   return (
-    <AppLayout>
       <div className="max-w-4xl mx-auto animate-fade-in">
         <h1 className="text-2xl font-bold mb-1">Дневник руководителя</h1>
         <p className="text-muted-foreground mb-6">
@@ -109,7 +108,6 @@ export default function LeaderDiaryList() {
             ))}
           </div>
         )}
-      </div>
-    </AppLayout>
+    </div>
   );
 }

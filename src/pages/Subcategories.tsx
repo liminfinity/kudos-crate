@@ -53,7 +53,6 @@ export default function SubcategoriesPage() {
   }
 
   return (
-    <AppLayout>
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <div>
@@ -148,7 +147,6 @@ export default function SubcategoriesPage() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
-    </AppLayout>
+    </div>
   );
 }

@@ -133,11 +133,10 @@ export default function CriticalIncidents() {
   }
 
   if (role !== 'hr' && role !== 'admin') {
-    return <AppLayout><div className="text-center py-20 text-muted-foreground">Доступ ограничен</div></AppLayout>;
+    return <div className="text-center py-20 text-muted-foreground">Доступ ограничен</div>;
   }
 
   return (
-    <AppLayout>
       <div className="space-y-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -303,7 +302,6 @@ export default function CriticalIncidents() {
             </div>
           </CardContent>
         </Card>
-      </div>
-    </AppLayout>
+    </div>
   );
 }

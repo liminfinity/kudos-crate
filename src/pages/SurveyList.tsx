@@ -91,12 +91,7 @@ export default function SurveyList() {
   }
 
   return (
-    <AppLayout>
       <div className="max-w-3xl mx-auto animate-fade-in">
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Link to="/surveys"><Button variant={location.pathname === '/surveys' ? 'default' : 'outline'} size="sm" className="text-xs">Опросы</Button></Link>
-          <Link to="/review-360/tasks"><Button variant={location.pathname.startsWith('/review-360') ? 'default' : 'outline'} size="sm" className="text-xs">Задания 360</Button></Link>
-        </div>
         <h1 className="text-2xl font-bold mb-1">Опросы</h1>
         <p className="text-muted-foreground mb-6">Назначенные опросы и анкеты</p>
 
@@ -145,6 +140,5 @@ export default function SurveyList() {
           </div>
         )}
       </div>
-    </AppLayout>
   );
 }

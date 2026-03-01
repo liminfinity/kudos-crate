@@ -83,7 +83,6 @@ export default function EmbedSettings() {
   };
 
   return (
-    <AppLayout>
       <div className="max-w-4xl mx-auto animate-fade-in">
         <h1 className="text-2xl font-bold mb-1">Встраивание</h1>
         <p className="text-muted-foreground mb-6">Получите код для размещения на внешнем сайте</p>
@@ -191,7 +190,6 @@ export default function EmbedSettings() {
             </Card>
           </div>
         )}
-      </div>
-    </AppLayout>
+    </div>
   );
 }

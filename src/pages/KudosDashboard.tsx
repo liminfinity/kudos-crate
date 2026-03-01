@@ -126,7 +126,6 @@ export default function KudosDashboard() {
   }, [filtered, profileMap, teams]);
 
   return (
-    <AppLayout>
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center gap-3">
           <Heart size={24} className="text-positive" />
@@ -261,7 +260,6 @@ export default function KudosDashboard() {
             </div>
           </CardContent>
         </Card>
-      </div>
-    </AppLayout>
+    </div>
   );
 }

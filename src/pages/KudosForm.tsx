@@ -115,25 +115,19 @@ export default function KudosForm() {
 
   if (submitted) {
     return (
-      <AppLayout>
-        <FeedbackLayout>
-        <div className="max-w-lg mx-auto mt-20 text-center animate-fade-in">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-positive/10 mb-6">
-            <Heart size={32} className="text-positive" />
-          </div>
-          <h2 className="text-2xl font-bold mb-2">Kudos отправлен! 🎉</h2>
-          <p className="text-muted-foreground mb-6">Благодарность помогает строить сильную команду</p>
-          <Button onClick={resetForm}>Отправить ещё</Button>
+      <div className="max-w-lg mx-auto mt-20 text-center animate-fade-in">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-positive/10 mb-6">
+          <Heart size={32} className="text-positive" />
         </div>
-        </FeedbackLayout>
-      </AppLayout>
+        <h2 className="text-2xl font-bold mb-2">Kudos отправлен! 🎉</h2>
+        <p className="text-muted-foreground mb-6">Благодарность помогает строить сильную команду</p>
+        <Button onClick={resetForm}>Отправить ещё</Button>
+      </div>
     );
   }
 
   return (
-    <AppLayout>
-      <FeedbackLayout>
-      <div className="max-w-2xl mx-auto animate-fade-in">
+    <div className="max-w-2xl mx-auto animate-fade-in">
         <MiraHint variant="tip" className="mb-4">Поблагодарите коллегу за конкретную помощь — это ценно!</MiraHint>
         <div className="flex items-center gap-3 mb-1">
           <Heart size={24} className="text-positive" />
@@ -215,8 +209,6 @@ export default function KudosForm() {
             </Button>
           </form>
         )}
-      </div>
-      </FeedbackLayout>
-    </AppLayout>
+    </div>
   );
 }

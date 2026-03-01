@@ -146,7 +146,6 @@ export default function EngagementAnalytics() {
   }
 
   return (
-    <AppLayout>
       <div className="space-y-6 animate-fade-in">
         <div>
           <h1 className="text-2xl font-bold">Вовлечённость сотрудников</h1>
@@ -272,7 +271,6 @@ export default function EngagementAnalytics() {
             ) : <p className="text-muted-foreground text-sm text-center py-8">Нет данных</p>}
           </CardContent>
         </Card>
-      </div>
-    </AppLayout>
+    </div>
   );
 }

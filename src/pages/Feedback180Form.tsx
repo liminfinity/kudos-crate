@@ -91,27 +91,21 @@ export default function Feedback180Form() {
 
   if (submitted) {
     return (
-      <AppLayout>
-        <FeedbackLayout>
-        <div className="max-w-lg mx-auto mt-20 text-center animate-fade-in">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-positive/10 mb-6">
-            <CheckCircle2 size={32} className="text-positive" />
-          </div>
-          <h2 className="text-2xl font-bold mb-2">Отзыв 180 отправлен</h2>
-          <p className="text-muted-foreground mb-6">Спасибо! Ваша характеристика будет доступна руководителю.</p>
-          <Button onClick={() => { setSubmitted(false); setTextLong(''); setStrengths([]); setWeaknesses([]); }}>Написать ещё</Button>
+      <div className="max-w-lg mx-auto mt-20 text-center animate-fade-in">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-positive/10 mb-6">
+          <CheckCircle2 size={32} className="text-positive" />
         </div>
-        </FeedbackLayout>
-      </AppLayout>
+        <h2 className="text-2xl font-bold mb-2">Отзыв 180 отправлен</h2>
+        <p className="text-muted-foreground mb-6">Спасибо! Ваша характеристика будет доступна руководителю.</p>
+        <Button onClick={() => { setSubmitted(false); setTextLong(''); setStrengths([]); setWeaknesses([]); }}>Написать ещё</Button>
+      </div>
     );
   }
 
   const scoreLabels = ['', 'Сложно', 'Ниже среднего', 'Нормально', 'Хорошо', 'Отлично'];
 
   return (
-    <AppLayout>
-      <FeedbackLayout>
-      <div className="max-w-2xl mx-auto animate-fade-in">
+    <div className="max-w-2xl mx-auto animate-fade-in">
         <MiraHint variant="tip" className="mb-4">Общая характеристика коллеги. Опишите сильные стороны и зоны роста.</MiraHint>
 
         {error && (
@@ -218,9 +212,7 @@ export default function Feedback180Form() {
           <Button onClick={handleSubmit} size="lg" className="w-full" disabled={!isValid || submitting}>
             {submitting ? <><Loader2 size={16} className="animate-spin mr-2" />Отправка...</> : 'Отправить отзыв 180'}
           </Button>
-        </div>
       </div>
-      </FeedbackLayout>
-    </AppLayout>
+    </div>
   );
 }

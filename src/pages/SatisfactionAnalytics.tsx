@@ -112,7 +112,6 @@ export default function SatisfactionAnalytics() {
   }, [filtered, profileMap]);
 
   return (
-    <AppLayout>
       <div className="space-y-6 animate-fade-in">
         <div>
           <h1 className="text-2xl font-bold">Удовлетворённость команды</h1>
@@ -224,7 +223,6 @@ export default function SatisfactionAnalytics() {
             ) : <p className="text-muted-foreground text-sm text-center py-8">Нет данных (минимум 2 отзыва на сотрудника)</p>}
           </CardContent>
         </Card>
-      </div>
-    </AppLayout>
+    </div>
   );
 }
