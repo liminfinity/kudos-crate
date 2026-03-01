@@ -147,7 +147,7 @@ export default function CompanyMood() {
         {/* Filters */}
         <Card>
           <CardContent className="pt-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs text-muted-foreground">Период</Label>
                 <Select value={period} onValueChange={v => setPeriod(v as PeriodPreset)}>
