@@ -9,7 +9,6 @@ import {
   Building2,
   CalendarDays,
   LogOut,
-  MessageSquare,
   ClipboardList,
   BookOpen,
   PieChart,
@@ -32,15 +31,15 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Новый отзыв', path: '/feedback/new', icon: <MessageSquarePlus size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
-  { label: 'Kudos', path: '/kudos/new', icon: <Heart size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
+  { label: 'Оставить отзыв', path: '/feedback/new', icon: <MessageSquarePlus size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
+  { label: 'Благодарности', path: '/kudos/new', icon: <Heart size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
   { label: 'Мои опросы', path: '/surveys', icon: <ClipboardList size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
-  { label: 'Company Mood', path: '/mood', icon: <Activity size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
-  { label: 'Дашборд', path: '/dashboard', icon: <BarChart3 size={18} />, roles: ['manager', 'hr', 'admin'] },
-  { label: 'Kudos аналитика', path: '/kudos/dashboard', icon: <Award size={18} />, roles: ['manager', 'hr', 'admin'] },
+  { label: 'Атмосфера', path: '/mood', icon: <Activity size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
+  { label: 'Аналитика', path: '/dashboard', icon: <BarChart3 size={18} />, roles: ['manager', 'hr', 'admin'] },
+  { label: 'Благодарности (обзор)', path: '/kudos/dashboard', icon: <Award size={18} />, roles: ['manager', 'hr', 'admin'] },
   { label: 'Полугодовой срез', path: '/analytics/half-year', icon: <PieChart size={18} />, roles: ['manager', 'hr', 'admin'] },
-  { label: 'Дневник лидера', path: '/leader-diary', icon: <BookOpen size={18} />, roles: ['manager', 'hr', 'admin'] },
-  { label: 'Critical Incidents', path: '/incidents', icon: <AlertTriangle size={18} />, roles: ['hr', 'admin'] },
+  { label: 'Дневник руководителя', path: '/leader-diary', icon: <BookOpen size={18} />, roles: ['manager', 'hr', 'admin'] },
+  { label: 'Серьёзные сигналы', path: '/incidents', icon: <AlertTriangle size={18} />, roles: ['hr', 'admin'] },
   { label: 'Подкатегории', path: '/subcategories', icon: <Tags size={18} />, roles: ['manager', 'hr', 'admin'] },
   { label: 'Пользователи', path: '/admin/users', icon: <Users size={18} />, roles: ['admin'] },
   { label: 'Команды', path: '/admin/teams', icon: <Building2 size={18} />, roles: ['admin'] },
@@ -67,6 +66,17 @@ function NavLinks({ items, location, onNavigate }: { items: NavItem[]; location:
         </Link>
       ))}
     </>
+  );
+}
+
+function MiraLogo({ size = 'md' }: { size?: 'sm' | 'md' }) {
+  const textSize = size === 'sm' ? 'text-base' : 'text-lg';
+  return (
+    <div className="flex items-center gap-2">
+      <span className={cn("font-bold tracking-wide", textSize)}>
+        М<span className="relative">И<span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-sidebar-primary" /></span>РА
+      </span>
+    </div>
   );
 }
 
@@ -112,12 +122,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
   if (isMobile) {
     return (
       <div className="flex flex-col h-screen overflow-hidden">
-        {/* Mobile header */}
         <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-sidebar text-sidebar-foreground flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <MessageSquare size={20} className="text-sidebar-primary" />
-            <h1 className="text-base font-bold">Опросница</h1>
-          </div>
+          <MiraLogo size="sm" />
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="text-sidebar-foreground">
@@ -127,10 +133,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <SheetContent side="left" className="w-72 p-0 bg-sidebar text-sidebar-foreground border-sidebar-border">
               <SheetTitle className="sr-only">Навигация</SheetTitle>
               <div className="p-5 border-b border-sidebar-border">
-                <div className="flex items-center gap-2">
-                   <MessageSquare size={24} className="text-sidebar-primary" />
-                  <span className="text-lg font-bold">Опросница</span>
-                </div>
+                <MiraLogo />
               </div>
               <nav className="flex-1 p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-180px)]">
                 <NavLinks items={visibleItems} location={location} onNavigate={() => setSheetOpen(false)} />
@@ -153,10 +156,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
     <div className="flex h-screen overflow-hidden">
       <aside className="w-64 flex-shrink-0 bg-sidebar text-sidebar-foreground flex flex-col">
         <div className="p-5 border-b border-sidebar-border">
-          <div className="flex items-center gap-2">
-            <MessageSquare size={24} className="text-sidebar-primary" />
-            <h1 className="text-lg font-bold">Опросница</h1>
-          </div>
+          <MiraLogo />
+          <p className="text-[10px] text-sidebar-foreground/40 mt-1 tracking-wide">обратная связь и развитие</p>
         </div>
         
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">

@@ -131,8 +131,8 @@ export default function KudosDashboard() {
         <div className="flex items-center gap-3">
           <Heart size={24} className="text-positive" />
           <div>
-            <h1 className="text-2xl font-bold">Soft Skills & Help Dashboard</h1>
-            <p className="text-muted-foreground">Аналитика благодарностей и взаимопомощи</p>
+            <h1 className="text-2xl font-bold">Благодарности</h1>
+            <p className="text-muted-foreground">Аналитика признания и взаимопомощи в команде</p>
           </div>
         </div>
 

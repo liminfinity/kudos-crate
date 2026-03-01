@@ -182,8 +182,8 @@ export default function Dashboard() {
       <div className="space-y-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Дашборд</h1>
-            <p className="text-muted-foreground">Аналитика обратной связи</p>
+            <h1 className="text-2xl font-bold">Аналитика взаимодействий</h1>
+            <p className="text-muted-foreground">Обзор обратной связи в команде</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={exportRawCSV} className="gap-1"><Download size={14} /> Сырой CSV</Button>
