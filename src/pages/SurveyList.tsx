@@ -5,7 +5,7 @@ import { AppLayout } from '@/components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { ClipboardList, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -47,6 +47,7 @@ const statusIcons: Record<string, React.ReactNode> = {
 export default function SurveyList() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -92,8 +93,12 @@ export default function SurveyList() {
   return (
     <AppLayout>
       <div className="max-w-3xl mx-auto animate-fade-in">
-        <h1 className="text-2xl font-bold mb-1">Мои опросы</h1>
-        <p className="text-muted-foreground mb-6">Назначенные вам опросы и анкеты</p>
+        <div className="flex flex-wrap gap-2 mb-4">
+          <Link to="/surveys"><Button variant={location.pathname === '/surveys' ? 'default' : 'outline'} size="sm" className="text-xs">Опросы</Button></Link>
+          <Link to="/review-360/tasks"><Button variant={location.pathname.startsWith('/review-360') ? 'default' : 'outline'} size="sm" className="text-xs">Задания 360</Button></Link>
+        </div>
+        <h1 className="text-2xl font-bold mb-1">Опросы</h1>
+        <p className="text-muted-foreground mb-6">Назначенные опросы и анкеты</p>
 
         {loading ? (
           <div className="flex justify-center py-12">

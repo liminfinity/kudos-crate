@@ -4,27 +4,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   MessageSquarePlus,
   BarChart3,
-  Tags,
   Users,
-  Building2,
-  CalendarDays,
   LogOut,
   ClipboardList,
-  BookOpen,
-  PieChart,
   Activity,
-  AlertTriangle,
-  Heart,
-  Award,
   Menu,
-  ThumbsUp,
-  Zap,
-  Lightbulb,
-  Code2,
   Settings,
-  UserCheck,
-  RotateCcw,
-  ListChecks,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
@@ -39,27 +24,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Оставить отзыв', path: '/feedback/new', icon: <MessageSquarePlus size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
-  { label: 'Отзыв 180', path: '/feedback-180', icon: <UserCheck size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
-  { label: 'Благодарности', path: '/kudos/new', icon: <Heart size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
-  { label: 'Мои опросы', path: '/surveys', icon: <ClipboardList size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
-  { label: 'Задания 360', path: '/review-360/tasks', icon: <ListChecks size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
+  { label: 'Отзыв', path: '/feedback/new', icon: <MessageSquarePlus size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
+  { label: 'Опросы', path: '/surveys', icon: <ClipboardList size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
   { label: 'Атмосфера', path: '/mood', icon: <Activity size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
   { label: 'Аналитика', path: '/dashboard', icon: <BarChart3 size={18} />, roles: ['manager', 'hr', 'admin'] },
-  { label: 'Благодарности (обзор)', path: '/kudos/dashboard', icon: <Award size={18} />, roles: ['manager', 'hr', 'admin'] },
-  { label: 'Удовлетворённость', path: '/satisfaction', icon: <ThumbsUp size={18} />, roles: ['manager', 'hr', 'admin'] },
-  { label: 'Вовлечённость', path: '/engagement', icon: <Zap size={18} />, roles: ['manager', 'hr', 'admin'] },
-  { label: 'Рекомендации', path: '/recommendations', icon: <Lightbulb size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
-  { label: 'Полугодовой срез', path: '/analytics/half-year', icon: <PieChart size={18} />, roles: ['manager', 'hr', 'admin'] },
-  { label: 'Дневник руководителя', path: '/leader-diary', icon: <BookOpen size={18} />, roles: ['manager', 'hr', 'admin'] },
-  { label: 'Отзывы 180 (аналитика)', path: '/feedback-180/analytics', icon: <UserCheck size={18} />, roles: ['manager', 'hr', 'admin'] },
-  { label: 'Отзывы 360', path: '/review-360', icon: <RotateCcw size={18} />, roles: ['manager', 'hr', 'admin'] },
-  { label: 'Серьёзные сигналы', path: '/incidents', icon: <AlertTriangle size={18} />, roles: ['hr', 'admin'] },
-  { label: 'Подкатегории', path: '/subcategories', icon: <Tags size={18} />, roles: ['manager', 'hr', 'admin'] },
-  { label: 'Пользователи', path: '/admin/users', icon: <Users size={18} />, roles: ['admin'] },
-  { label: 'Команды', path: '/admin/teams', icon: <Building2 size={18} />, roles: ['admin'] },
-  { label: 'Эпизоды', path: '/admin/episodes', icon: <CalendarDays size={18} />, roles: ['admin'] },
-  { label: 'Встраивание', path: '/admin/embed', icon: <Code2 size={18} />, roles: ['admin'] },
+  { label: 'Управление', path: '/admin/users', icon: <Users size={18} />, roles: ['admin'] },
   { label: 'Настройки', path: '/settings', icon: <Settings size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
 ];
 
