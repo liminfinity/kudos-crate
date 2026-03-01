@@ -10,24 +10,38 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, ChevronLeft, ChevronRight, Search, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Profile } from '@/lib/supabase-types';
 import { useTextProcessor } from '@/hooks/useTextProcessor';
+import { MiraHint } from '@/components/MiraHint';
+import { STEP_ICONS } from '@/components/SurveyStepIcons';
+
+function StepIcon({ step, size = 18 }: { step: number; size?: number }) {
+  const Icon = STEP_ICONS[step];
+  return Icon ? <Icon size={size} /> : null;
+}
 
 const STEPS = [
   'Общая информация',
-  'Работа за 6 месяцев',
-  'Оценка условий работы',
+  'Работа за период',
+  'Условия работы',
   'Рост и развитие',
   'Социометрия',
-  'Состояние и динамика',
+  'Состояние',
   'Роль в команде',
   'Обратная связь',
   'Планы',
   'Важное',
 ];
+
+const STEP_HINTS: Record<number, string> = {
+  1: 'Постарайтесь вспомнить ключевые проекты и задачи. Конкретные примеры помогут руководителю лучше понять ваш вклад.',
+  2: 'Оцените условия честно — это анонимный срез, и он помогает улучшить рабочую среду.',
+  4: 'Укажите тех, с кем реально взаимодействовали. Это поможет увидеть реальную структуру команды.',
+  5: 'Честная самооценка состояния помогает вовремя заметить проблемы и получить поддержку.',
+};
 
 const DIFFICULTIES = [
   'Размытые требования/цели',
@@ -46,29 +60,34 @@ const WORK_CONDITIONS = [
   'Справедливость распределения нагрузки',
 ];
 
-const LIKERT_OPTIONS = ['Полностью устраивает', 'Скорее да', 'Скорее нет', 'Не устраивает'];
+const LIKERT_OPTIONS = [
+  { label: 'Полностью устраивает', emoji: '😊' },
+  { label: 'Скорее да', emoji: '🙂' },
+  { label: 'Скорее нет', emoji: '😐' },
+  { label: 'Не устраивает', emoji: '😟' },
+];
 
 const WELLBEING_OPTIONS = [
-  'Стабильно, комфортно, чувствую опору',
-  'Рабочее состояние, но бывают сложности',
-  'Часто чувствую напряжение или усталость',
-  'Близок к выгоранию / Мне тяжело',
+  { label: 'Стабильно, комфортно, чувствую опору', emoji: '💚', color: 'bg-positive/10 border-positive/30 hover:bg-positive/20' },
+  { label: 'Рабочее состояние, но бывают сложности', emoji: '💛', color: 'bg-chart-4/10 border-chart-4/30 hover:bg-chart-4/20' },
+  { label: 'Часто чувствую напряжение или усталость', emoji: '🧡', color: 'bg-chart-4/10 border-chart-4/30 hover:bg-chart-4/20' },
+  { label: 'Близок к выгоранию / Мне тяжело', emoji: '❤️', color: 'bg-negative/10 border-negative/30 hover:bg-negative/20' },
 ];
 
 const INVOLVEMENT_OPTIONS = [
-  'Был(а) драйвером, много инициатив',
-  'Работал(а) в штатном режиме',
-  'Был(а) пассивен / делал(а) только то, что просили',
-  'Было сложно включиться в задачи',
+  { label: 'Был(а) драйвером, много инициатив', emoji: '🚀' },
+  { label: 'Работал(а) в штатном режиме', emoji: '⚙️' },
+  { label: 'Был(а) пассивен / делал(а) только то, что просили', emoji: '🐢' },
+  { label: 'Было сложно включиться в задачи', emoji: '😔' },
 ];
 
 const TEAM_ROLES = [
-  'Идейный вдохновитель (генератор идей)',
-  'Исполнитель (довожу задачи до конца)',
-  'Координатор (организую людей и процессы)',
-  'Эксперт/аналитик (люблю разбираться в деталях)',
-  '«Маг» / Коммуникатор (поддерживаю связь, помогаю другим)',
-  'Критик (замечаю риски и ошибки)',
+  { label: 'Идейный вдохновитель', desc: 'генератор идей', emoji: '💡' },
+  { label: 'Исполнитель', desc: 'довожу задачи до конца', emoji: '✅' },
+  { label: 'Координатор', desc: 'организую людей и процессы', emoji: '🗂️' },
+  { label: 'Эксперт/аналитик', desc: 'люблю разбираться в деталях', emoji: '🔬' },
+  { label: 'Коммуникатор', desc: 'поддерживаю связь, помогаю другим', emoji: '🤝' },
+  { label: 'Критик', desc: 'замечаю риски и ошибки', emoji: '🛡️' },
 ];
 
 interface Answers {
@@ -130,13 +149,10 @@ export default function HalfYearSurveyForm() {
   const [error, setError] = useState('');
   const { processText, processing } = useTextProcessor();
 
-  // Sociometry autocomplete
   const [socSearch, setSocSearch] = useState('');
   const [socDropdownOpen, setSocDropdownOpen] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, [assignmentId]);
+  useEffect(() => { loadData(); }, [assignmentId]);
 
   async function loadData() {
     const [aRes, profRes] = await Promise.all([
@@ -151,8 +167,6 @@ export default function HalfYearSurveyForm() {
     if (aRes.data) {
       setAssignmentData(aRes.data);
       if ((aRes.data as any).status === 'submitted') setReadOnly(true);
-
-      // Load existing response
       const { data: resp } = await supabase
         .from('survey_responses')
         .select('answers_json')
@@ -204,35 +218,25 @@ export default function HalfYearSurveyForm() {
     if (!assignmentId || readOnly) return;
     setSubmitting(true);
     try {
-      // Update assignment status
       await supabase.from('survey_assignments').update({
         status: 'in_progress' as any,
         started_at: new Date().toISOString(),
       }).eq('id', assignmentId);
 
-      // Upsert response
       const { data: existing } = await supabase.from('survey_responses')
         .select('id').eq('assignment_id', assignmentId).maybeSingle();
 
       if (existing) {
-        await supabase.from('survey_responses').update({
-          answers_json: answers as any,
-        }).eq('id', existing.id);
+        await supabase.from('survey_responses').update({ answers_json: answers as any }).eq('id', existing.id);
       } else {
-        await supabase.from('survey_responses').insert({
-          assignment_id: assignmentId,
-          answers_json: answers as any,
-        });
+        await supabase.from('survey_responses').insert({ assignment_id: assignmentId, answers_json: answers as any });
       }
-    } catch (e: any) {
-      setError(e.message);
-    }
+    } catch (e: any) { setError(e.message); }
     setSubmitting(false);
   }
 
   async function handleSubmit() {
     if (!assignmentId || readOnly) return;
-    // Validate
     if (answers.sociometry_interact.length < 2 || answers.sociometry_interact.length > 5) {
       setError('Укажите от 2 до 5 коллег в разделе Социометрия');
       setStep(4);
@@ -247,7 +251,6 @@ export default function HalfYearSurveyForm() {
     setSubmitting(true);
     setError('');
     try {
-      // Process text fields with AI
       const textFields: (keyof Answers)[] = ['main_work', 'main_achievement', 'learned', 'want_to_develop', 'feedback_helps', 'feedback_hinders', 'plans', 'important'];
       const processedAnswers = { ...answers };
       for (const field of textFields) {
@@ -259,38 +262,26 @@ export default function HalfYearSurveyForm() {
             setSubmitting(false);
             return;
           }
-          if (result?.processed_text) {
-            (processedAnswers as any)[field] = result.processed_text;
-          }
+          if (result?.processed_text) (processedAnswers as any)[field] = result.processed_text;
         }
       }
       setAnswers(processedAnswers);
 
-      // Save response
       const { data: existing } = await supabase.from('survey_responses')
         .select('id').eq('assignment_id', assignmentId).maybeSingle();
-
       if (existing) {
-        await supabase.from('survey_responses').update({
-          answers_json: processedAnswers as any,
-        }).eq('id', existing.id);
+        await supabase.from('survey_responses').update({ answers_json: processedAnswers as any }).eq('id', existing.id);
       } else {
-        await supabase.from('survey_responses').insert({
-          assignment_id: assignmentId,
-          answers_json: processedAnswers as any,
-        });
+        await supabase.from('survey_responses').insert({ assignment_id: assignmentId, answers_json: processedAnswers as any });
       }
 
-      // Mark as submitted
       await supabase.from('survey_assignments').update({
         status: 'submitted' as any,
         submitted_at: new Date().toISOString(),
       }).eq('id', assignmentId);
 
       setSubmitted(true);
-    } catch (e: any) {
-      setError(e.message);
-    }
+    } catch (e: any) { setError(e.message); }
     setSubmitting(false);
   }
 
@@ -315,11 +306,12 @@ export default function HalfYearSurveyForm() {
 
   const cycleLabel = (assignmentData as any)?.cycle?.label || '';
   const periodStr = `${(assignmentData as any)?.cycle?.period_start} — ${(assignmentData as any)?.cycle?.period_end}`;
+  const progressPercent = Math.round(((step + 1) / STEPS.length) * 100);
 
   return (
     <AppLayout>
       <div className="max-w-3xl mx-auto animate-fade-in">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-2">
           <div>
             <h1 className="text-xl font-bold">Полугодовой срез</h1>
             <p className="text-sm text-muted-foreground">{cycleLabel} • {periodStr}</p>
@@ -327,43 +319,58 @@ export default function HalfYearSurveyForm() {
           {readOnly && <Badge variant="secondary">Только просмотр</Badge>}
         </div>
 
-        {/* Step indicator */}
+        {/* Progress bar */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs text-muted-foreground">Шаг {step + 1} из {STEPS.length}</span>
+            <span className="text-xs font-medium text-primary">{progressPercent}%</span>
+          </div>
+          <Progress value={progressPercent} className="h-2" />
+        </div>
+
+        {/* Step tabs with icons */}
         <div className="flex gap-1 mb-6 overflow-x-auto pb-2">
-          {STEPS.map((s, i) => (
-            <button
-              key={i}
-              onClick={() => setStep(i)}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
-                i === step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
-              )}
-            >
-              {i + 1}. {s}
-            </button>
-          ))}
+          {STEPS.map((s, i) => {
+            const Icon = STEP_ICONS[i];
+            return (
+              <button
+                key={i}
+                onClick={() => setStep(i)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all",
+                  i === step
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : i < step
+                    ? "bg-positive/10 text-positive hover:bg-positive/20"
+                    : "bg-muted text-muted-foreground hover:bg-accent/10"
+                )}
+              >
+                <Icon size={14} />
+                <span className="hidden sm:inline">{s}</span>
+              </button>
+            );
+          })}
         </div>
 
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
         )}
 
+        {/* Mira contextual hint */}
+        {STEP_HINTS[step] && (
+          <MiraHint variant="tip" className="mb-4">
+            {STEP_HINTS[step]}
+          </MiraHint>
+        )}
+
         {/* Step 0: General Info */}
         {step === 0 && (
           <Card>
-            <CardHeader><CardTitle className="text-base">Общая информация</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><StepIcon step={0} /> Общая информация</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label>ФИО</Label>
-                <Input value={profile?.full_name || ''} disabled />
-              </div>
-              <div>
-                <Label>Период среза</Label>
-                <Input value={periodStr} disabled />
-              </div>
-              <div>
-                <Label>Дата заполнения</Label>
-                <Input type="date" value={answers.fill_date} onChange={e => update('fill_date', e.target.value)} disabled={readOnly} />
-              </div>
+              <div><Label>ФИО</Label><Input value={profile?.full_name || ''} disabled /></div>
+              <div><Label>Период среза</Label><Input value={periodStr} disabled /></div>
+              <div><Label>Дата заполнения</Label><Input type="date" value={answers.fill_date} onChange={e => update('fill_date', e.target.value)} disabled={readOnly} /></div>
             </CardContent>
           </Card>
         )}
@@ -371,7 +378,7 @@ export default function HalfYearSurveyForm() {
         {/* Step 1: Work */}
         {step === 1 && (
           <Card>
-            <CardHeader><CardTitle className="text-base">1. Работа за 6 месяцев</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><StepIcon step={1} /> Работа за период</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <Label>Над чем главным вы работали? *</Label>
@@ -384,66 +391,69 @@ export default function HalfYearSurveyForm() {
               </div>
               <div>
                 <Label className="mb-2 block">С какими сложностями столкнулись?</Label>
-                {DIFFICULTIES.map(d => (
-                  <div key={d} className="flex items-center gap-2 mb-2">
-                    <Checkbox checked={answers.difficulties.includes(d)} onCheckedChange={() => !readOnly && toggleDifficulty(d)} disabled={readOnly} />
-                    <span className="text-sm">{d}</span>
-                  </div>
-                ))}
-                <div className="flex items-center gap-2">
-                  <Checkbox checked={answers.difficulties.includes('other')} onCheckedChange={() => !readOnly && toggleDifficulty('other')} disabled={readOnly} />
-                  <span className="text-sm">Другое:</span>
-                  <Input value={answers.difficulties_other} onChange={e => update('difficulties_other', e.target.value)} className="flex-1" disabled={readOnly} placeholder="..." />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {DIFFICULTIES.map(d => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => !readOnly && toggleDifficulty(d)}
+                      disabled={readOnly}
+                      className={cn(
+                        "flex items-center gap-2 p-3 rounded-lg border text-sm text-left transition-all",
+                        answers.difficulties.includes(d)
+                          ? "bg-primary/10 border-primary/30 text-foreground"
+                          : "bg-card border-border hover:bg-muted/50 text-muted-foreground"
+                      )}
+                    >
+                      <Checkbox checked={answers.difficulties.includes(d)} className="pointer-events-none" />
+                      <span>{d}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-2">
+                  <Input value={answers.difficulties_other} onChange={e => update('difficulties_other', e.target.value)} disabled={readOnly} placeholder="Другое..." />
                 </div>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Step 2: Work Conditions */}
+        {/* Step 2: Work Conditions — Card-based Likert */}
         {step === 2 && (
-          <Card>
-            <CardHeader><CardTitle className="text-base">2. Оценка условий работы</CardTitle></CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr>
-                      <th className="text-left py-2 pr-4 font-medium">Параметр</th>
-                      {LIKERT_OPTIONS.map(o => (
-                        <th key={o} className="text-center py-2 px-2 font-medium text-xs whitespace-nowrap">{o}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {WORK_CONDITIONS.map(cond => (
-                      <tr key={cond} className="border-t border-border">
-                        <td className="py-3 pr-4">{cond}</td>
-                        {LIKERT_OPTIONS.map(opt => (
-                          <td key={opt} className="text-center py-3 px-2">
-                            <input
-                              type="radio"
-                              name={`cond_${cond}`}
-                              checked={answers.work_conditions[cond] === opt}
-                              onChange={() => !readOnly && update('work_conditions', { ...answers.work_conditions, [cond]: opt })}
-                              disabled={readOnly}
-                              className="w-4 h-4 accent-primary"
-                            />
-                          </td>
-                        ))}
-                      </tr>
+          <div className="space-y-3">
+            {WORK_CONDITIONS.map(cond => (
+              <Card key={cond} className="overflow-hidden">
+                <CardContent className="pt-4 pb-3">
+                  <p className="text-sm font-medium mb-3">{cond}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {LIKERT_OPTIONS.map(opt => (
+                      <button
+                        key={opt.label}
+                        type="button"
+                        onClick={() => !readOnly && update('work_conditions', { ...answers.work_conditions, [cond]: opt.label })}
+                        disabled={readOnly}
+                        className={cn(
+                          "flex flex-col items-center gap-1 p-3 rounded-lg border text-xs transition-all",
+                          answers.work_conditions[cond] === opt.label
+                            ? "bg-primary/10 border-primary/30 text-foreground font-medium"
+                            : "bg-card border-border hover:bg-muted/50 text-muted-foreground"
+                        )}
+                      >
+                        <span className="text-lg">{opt.emoji}</span>
+                        <span className="text-center leading-tight">{opt.label}</span>
+                      </button>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
 
         {/* Step 3: Growth */}
         {step === 3 && (
           <Card>
-            <CardHeader><CardTitle className="text-base">3. Рост и развитие</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><StepIcon step={3} /> Рост и развитие</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <Label>Чему научились за эти полгода?</Label>
@@ -460,7 +470,7 @@ export default function HalfYearSurveyForm() {
         {/* Step 4: Sociometry */}
         {step === 4 && (
           <Card>
-            <CardHeader><CardTitle className="text-base">4. Социометрия</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><StepIcon step={4} /> Социометрия</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <Label>С кем взаимодействовали чаще всего? (2–5 человек) *</Label>
@@ -468,7 +478,7 @@ export default function HalfYearSurveyForm() {
                   {answers.sociometry_interact.map(uid => {
                     const p = profiles.find(pr => pr.id === uid);
                     return (
-                      <Badge key={uid} variant="secondary" className="gap-1 py-1">
+                      <Badge key={uid} variant="secondary" className="gap-1 py-1.5 px-3">
                         {p?.full_name || uid}
                         {!readOnly && <X size={12} className="cursor-pointer" onClick={() => removeSocUser(uid)} />}
                       </Badge>
@@ -478,20 +488,11 @@ export default function HalfYearSurveyForm() {
                 {!readOnly && answers.sociometry_interact.length < 5 && (
                   <div className="relative">
                     <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      value={socSearch}
-                      onChange={e => { setSocSearch(e.target.value); setSocDropdownOpen(true); }}
-                      onFocus={() => setSocDropdownOpen(true)}
-                      onBlur={() => setTimeout(() => setSocDropdownOpen(false), 200)}
-                      placeholder="Поиск сотрудника..."
-                      className="pl-9"
-                    />
+                    <Input value={socSearch} onChange={e => { setSocSearch(e.target.value); setSocDropdownOpen(true); }} onFocus={() => setSocDropdownOpen(true)} onBlur={() => setTimeout(() => setSocDropdownOpen(false), 200)} placeholder="Поиск сотрудника..." className="pl-9" />
                     {socDropdownOpen && socSearch && (
                       <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg max-h-40 overflow-y-auto">
                         {filteredSocUsers.length > 0 ? filteredSocUsers.map(u => (
-                          <button key={u.id} type="button" className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onMouseDown={e => e.preventDefault()} onClick={() => addSocUser(u.id)}>
-                            {u.full_name}
-                          </button>
+                          <button key={u.id} type="button" className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onMouseDown={e => e.preventDefault()} onClick={() => addSocUser(u.id)}>{u.full_name}</button>
                         )) : <p className="p-3 text-sm text-muted-foreground">Не найдено</p>}
                       </div>
                     )}
@@ -499,69 +500,95 @@ export default function HalfYearSurveyForm() {
                 )}
                 <p className="text-xs text-muted-foreground mt-1">Выбрано: {answers.sociometry_interact.length}/5</p>
               </div>
-              <div>
-                <Label>К кому обращались за помощью?</Label>
-                <Textarea value={answers.sociometry_help} onChange={e => update('sociometry_help', e.target.value.slice(0, 500))} rows={2} disabled={readOnly} />
-              </div>
-              <div>
-                <Label>С кем было комфортно и продуктивно работать?</Label>
-                <Textarea value={answers.sociometry_comfortable} onChange={e => update('sociometry_comfortable', e.target.value.slice(0, 500))} rows={2} disabled={readOnly} />
-              </div>
-              <div>
-                <Label>Кого бы взяли в команду на сложный проект? (опционально)</Label>
-                <Textarea value={answers.sociometry_project} onChange={e => update('sociometry_project', e.target.value.slice(0, 500))} rows={2} disabled={readOnly} />
-              </div>
+              <div><Label>К кому обращались за помощью?</Label><Textarea value={answers.sociometry_help} onChange={e => update('sociometry_help', e.target.value.slice(0, 500))} rows={2} disabled={readOnly} /></div>
+              <div><Label>С кем было комфортно и продуктивно работать?</Label><Textarea value={answers.sociometry_comfortable} onChange={e => update('sociometry_comfortable', e.target.value.slice(0, 500))} rows={2} disabled={readOnly} /></div>
+              <div><Label>Кого бы взяли в команду на сложный проект? (опционально)</Label><Textarea value={answers.sociometry_project} onChange={e => update('sociometry_project', e.target.value.slice(0, 500))} rows={2} disabled={readOnly} /></div>
             </CardContent>
           </Card>
         )}
 
-        {/* Step 5: Wellbeing */}
+        {/* Step 5: Wellbeing — Selectable Cards */}
         {step === 5 && (
           <Card>
-            <CardHeader><CardTitle className="text-base">5. Состояние и динамика</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><StepIcon step={5} /> Состояние и динамика</CardTitle></CardHeader>
+            <CardContent className="space-y-6">
               <div>
-                <Label className="mb-2 block">Как вы себя чувствовали в команде?</Label>
-                <RadioGroup value={answers.wellbeing} onValueChange={v => !readOnly && update('wellbeing', v)} disabled={readOnly}>
+                <Label className="mb-3 block">Как вы себя чувствовали в команде?</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {WELLBEING_OPTIONS.map(o => (
-                    <div key={o} className="flex items-center gap-2 mb-2">
-                      <RadioGroupItem value={o} id={`wb_${o}`} />
-                      <Label htmlFor={`wb_${o}`} className="font-normal">{o}</Label>
-                    </div>
+                    <button
+                      key={o.label}
+                      type="button"
+                      onClick={() => !readOnly && update('wellbeing', o.label)}
+                      disabled={readOnly}
+                      className={cn(
+                        "flex items-center gap-3 p-4 rounded-lg border text-sm text-left transition-all",
+                        answers.wellbeing === o.label
+                          ? cn(o.color, "ring-2 ring-primary/20")
+                          : "bg-card border-border hover:bg-muted/50"
+                      )}
+                    >
+                      <span className="text-2xl">{o.emoji}</span>
+                      <span>{o.label}</span>
+                    </button>
                   ))}
-                </RadioGroup>
+                </div>
               </div>
               <div>
-                <Label className="mb-2 block">Ваша вовлеченность за полугодие:</Label>
-                <RadioGroup value={answers.involvement} onValueChange={v => !readOnly && update('involvement', v)} disabled={readOnly}>
+                <Label className="mb-3 block">Ваша вовлеченность за полугодие:</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {INVOLVEMENT_OPTIONS.map(o => (
-                    <div key={o} className="flex items-center gap-2 mb-2">
-                      <RadioGroupItem value={o} id={`inv_${o}`} />
-                      <Label htmlFor={`inv_${o}`} className="font-normal">{o}</Label>
-                    </div>
+                    <button
+                      key={o.label}
+                      type="button"
+                      onClick={() => !readOnly && update('involvement', o.label)}
+                      disabled={readOnly}
+                      className={cn(
+                        "flex items-center gap-3 p-4 rounded-lg border text-sm text-left transition-all",
+                        answers.involvement === o.label
+                          ? "bg-primary/10 border-primary/30 ring-2 ring-primary/20"
+                          : "bg-card border-border hover:bg-muted/50"
+                      )}
+                    >
+                      <span className="text-2xl">{o.emoji}</span>
+                      <span>{o.label}</span>
+                    </button>
                   ))}
-                </RadioGroup>
+                </div>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Step 6: Team Role */}
+        {/* Step 6: Team Role — Selectable Cards */}
         {step === 6 && (
           <Card>
-            <CardHeader><CardTitle className="text-base">6. Роль в команде (самооценка)</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><StepIcon step={6} /> Роль в команде</CardTitle></CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-3">Выберите 1–2 варианта</p>
-              {TEAM_ROLES.map(r => (
-                <div key={r} className="flex items-center gap-2 mb-2">
-                  <Checkbox
-                    checked={answers.team_roles.includes(r)}
-                    onCheckedChange={() => !readOnly && toggleTeamRole(r)}
-                    disabled={readOnly || (answers.team_roles.length >= 2 && !answers.team_roles.includes(r))}
-                  />
-                  <span className="text-sm">{r}</span>
-                </div>
-              ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {TEAM_ROLES.map(r => (
+                  <button
+                    key={r.label}
+                    type="button"
+                    onClick={() => !readOnly && toggleTeamRole(r.label)}
+                    disabled={readOnly || (answers.team_roles.length >= 2 && !answers.team_roles.includes(r.label))}
+                    className={cn(
+                      "flex items-center gap-3 p-4 rounded-lg border text-left transition-all",
+                      answers.team_roles.includes(r.label)
+                        ? "bg-primary/10 border-primary/30 ring-2 ring-primary/20"
+                        : "bg-card border-border hover:bg-muted/50",
+                      answers.team_roles.length >= 2 && !answers.team_roles.includes(r.label) && "opacity-40 cursor-not-allowed"
+                    )}
+                  >
+                    <span className="text-2xl">{r.emoji}</span>
+                    <div>
+                      <p className="text-sm font-medium">{r.label}</p>
+                      <p className="text-xs text-muted-foreground">{r.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}
@@ -569,16 +596,10 @@ export default function HalfYearSurveyForm() {
         {/* Step 7: Feedback */}
         {step === 7 && (
           <Card>
-            <CardHeader><CardTitle className="text-base">7. Обратная связь</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><StepIcon step={7} /> Обратная связь</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label>Что в работе команды/руководителя вам особенно помогает?</Label>
-                <Textarea value={answers.feedback_helps} onChange={e => update('feedback_helps', e.target.value.slice(0, 2000))} rows={3} disabled={readOnly} />
-              </div>
-              <div>
-                <Label>Что мешает работать эффективно?</Label>
-                <Textarea value={answers.feedback_hinders} onChange={e => update('feedback_hinders', e.target.value.slice(0, 2000))} rows={3} disabled={readOnly} />
-              </div>
+              <div><Label>Что в работе команды/руководителя вам особенно помогает?</Label><Textarea value={answers.feedback_helps} onChange={e => update('feedback_helps', e.target.value.slice(0, 2000))} rows={3} disabled={readOnly} /></div>
+              <div><Label>Что мешает работать эффективно?</Label><Textarea value={answers.feedback_hinders} onChange={e => update('feedback_hinders', e.target.value.slice(0, 2000))} rows={3} disabled={readOnly} /></div>
             </CardContent>
           </Card>
         )}
@@ -586,7 +607,7 @@ export default function HalfYearSurveyForm() {
         {/* Step 8: Plans */}
         {step === 8 && (
           <Card>
-            <CardHeader><CardTitle className="text-base">8. Планы на следующие полгода</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><StepIcon step={8} /> Планы</CardTitle></CardHeader>
             <CardContent>
               <Label>Какие цели ставите себе?</Label>
               <Textarea value={answers.plans} onChange={e => update('plans', e.target.value.slice(0, 2000))} rows={4} disabled={readOnly} placeholder="Что конкретно хотите сделать / изменить / получить?" />
@@ -597,7 +618,7 @@ export default function HalfYearSurveyForm() {
         {/* Step 9: Important */}
         {step === 9 && (
           <Card>
-            <CardHeader><CardTitle className="text-base">9. Важное</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><StepIcon step={9} /> Важное</CardTitle></CardHeader>
             <CardContent>
               <Label>Что ещё не спросили, но вы хотите сказать?</Label>
               <Textarea value={answers.important} onChange={e => update('important', e.target.value.slice(0, 2000))} rows={4} disabled={readOnly} />
