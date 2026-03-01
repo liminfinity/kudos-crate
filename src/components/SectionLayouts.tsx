@@ -5,12 +5,12 @@ import { MessageSquarePlus, UserCheck, Heart, ClipboardList, RotateCcw, BarChart
 
 const feedbackTabs: SectionTab[] = [
   { label: 'Отзыв', path: '/feedback/new', icon: MessageSquarePlus },
-  { label: 'Отзыв 180', path: '/feedback-180', icon: UserCheck },
   { label: 'Благодарность', path: '/kudos/new', icon: Heart },
 ];
 
 const surveyTabs: SectionTab[] = [
   { label: 'Опросы', path: '/surveys', icon: ClipboardList },
+  { label: 'Отзыв 180', path: '/feedback-180', icon: UserCheck },
   { label: 'Задания 360', path: '/review-360/tasks', icon: RotateCcw, matchPrefix: true },
 ];
 
