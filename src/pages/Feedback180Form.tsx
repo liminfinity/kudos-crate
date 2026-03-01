@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/AppLayout';
+import { FeedbackLayout } from '@/components/FeedbackLayout';
+import { MiraHint } from '@/components/MiraHint';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -90,6 +92,7 @@ export default function Feedback180Form() {
   if (submitted) {
     return (
       <AppLayout>
+        <FeedbackLayout>
         <div className="max-w-lg mx-auto mt-20 text-center animate-fade-in">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-positive/10 mb-6">
             <CheckCircle2 size={32} className="text-positive" />
@@ -98,6 +101,7 @@ export default function Feedback180Form() {
           <p className="text-muted-foreground mb-6">Спасибо! Ваша характеристика будет доступна руководителю.</p>
           <Button onClick={() => { setSubmitted(false); setTextLong(''); setStrengths([]); setWeaknesses([]); }}>Написать ещё</Button>
         </div>
+        </FeedbackLayout>
       </AppLayout>
     );
   }
@@ -106,9 +110,9 @@ export default function Feedback180Form() {
 
   return (
     <AppLayout>
+      <FeedbackLayout>
       <div className="max-w-2xl mx-auto animate-fade-in">
-        <h1 className="text-2xl font-bold mb-1">Отзыв 180</h1>
-        <p className="text-muted-foreground mb-6">Общая характеристика коллеги (не привязана к эпизоду)</p>
+        <MiraHint variant="tip" className="mb-4">Общая характеристика коллеги. Опишите сильные стороны и зоны роста.</MiraHint>
 
         {error && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm mb-4">
@@ -216,6 +220,7 @@ export default function Feedback180Form() {
           </Button>
         </div>
       </div>
+      </FeedbackLayout>
     </AppLayout>
   );
 }

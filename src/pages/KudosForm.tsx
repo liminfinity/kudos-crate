@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/AppLayout';
+import { FeedbackLayout } from '@/components/FeedbackLayout';
+import { MiraHint } from '@/components/MiraHint';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -114,6 +116,7 @@ export default function KudosForm() {
   if (submitted) {
     return (
       <AppLayout>
+        <FeedbackLayout>
         <div className="max-w-lg mx-auto mt-20 text-center animate-fade-in">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-positive/10 mb-6">
             <Heart size={32} className="text-positive" />
@@ -122,13 +125,16 @@ export default function KudosForm() {
           <p className="text-muted-foreground mb-6">Благодарность помогает строить сильную команду</p>
           <Button onClick={resetForm}>Отправить ещё</Button>
         </div>
+        </FeedbackLayout>
       </AppLayout>
     );
   }
 
   return (
     <AppLayout>
+      <FeedbackLayout>
       <div className="max-w-2xl mx-auto animate-fade-in">
+        <MiraHint variant="tip" className="mb-4">Поблагодарите коллегу за конкретную помощь — это ценно!</MiraHint>
         <div className="flex items-center gap-3 mb-1">
           <Heart size={24} className="text-positive" />
           <h1 className="text-2xl font-bold">Отправить Kudos</h1>
@@ -210,6 +216,7 @@ export default function KudosForm() {
           </form>
         )}
       </div>
+      </FeedbackLayout>
     </AppLayout>
   );
 }

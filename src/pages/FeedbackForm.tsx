@@ -20,6 +20,7 @@ import { MiraHint } from '@/components/MiraHint';
 import { MiraFillAssistant } from '@/components/MiraFillAssistant';
 import { getSubcategoryIcon } from '@/lib/subcategory-icons';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { FeedbackLayout } from '@/components/FeedbackLayout';
 
 interface SubcategoryExt extends Subcategory {
   is_critical: boolean;
@@ -208,6 +209,7 @@ export default function FeedbackForm() {
   if (submitted) {
     return (
       <AppLayout>
+        <FeedbackLayout>
         <div className="max-w-lg mx-auto mt-20 text-center animate-fade-in">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-positive/10 mb-6">
             <CheckCircle2 size={32} className="text-positive" />
@@ -216,21 +218,16 @@ export default function FeedbackForm() {
           <p className="text-muted-foreground mb-6">{isUpdate ? 'Ваш отзыв обновлён.' : 'Отзыв успешно отправлен.'}</p>
           <Button onClick={resetForm}>Отправить ещё</Button>
         </div>
+        </FeedbackLayout>
       </AppLayout>
     );
   }
 
   return (
     <AppLayout>
+      <FeedbackLayout>
       <div className="max-w-2xl mx-auto animate-fade-in">
-        {/* Quick nav to related actions */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Link to="/feedback/new"><Button variant={location.pathname === '/feedback/new' ? 'default' : 'outline'} size="sm" className="text-xs">Отзыв</Button></Link>
-          <Link to="/feedback-180"><Button variant={location.pathname === '/feedback-180' ? 'default' : 'outline'} size="sm" className="text-xs">Отзыв 180</Button></Link>
-          <Link to="/kudos/new"><Button variant={location.pathname === '/kudos/new' ? 'default' : 'outline'} size="sm" className="text-xs">Благодарность</Button></Link>
-        </div>
-        <h1 className="text-2xl font-bold mb-1">Отзыв</h1>
-        <p className="text-muted-foreground mb-6">Обратная связь коллеге</p>
+        <MiraHint variant="tip" className="mb-4">Выберите эпизод и коллегу. Укажите 1–3 категории и напишите короткий комментарий.</MiraHint>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
@@ -475,6 +472,7 @@ export default function FeedbackForm() {
           </Button>
         </form>
       </div>
+      </FeedbackLayout>
     </AppLayout>
   );
 }
