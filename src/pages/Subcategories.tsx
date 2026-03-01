@@ -116,7 +116,7 @@ export default function SubcategoriesPage() {
                   <TableRow key={s.id}>
                     <TableCell className="font-medium">{s.name}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className={cn("text-xs", s.sentiment === 'positive' ? 'text-positive' : 'text-negative')}>
+                      <Badge variant="secondary" className={cn("text-xs", s.sentiment === 'positive' ? 'bg-positive/15 text-positive border border-positive/30' : 'bg-negative/15 text-negative border border-negative/30')}>
                         {s.sentiment === 'positive' ? 'Позитивная' : 'Негативная'}
                       </Badge>
                     </TableCell>
