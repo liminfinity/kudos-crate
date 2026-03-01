@@ -67,8 +67,8 @@ function NavLinks({ items, location, onNavigate }: { items: NavItem[]; location:
           className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
             location.pathname === item.path || location.pathname.startsWith(item.path + '/')
-              ? "bg-sidebar-accent text-sidebar-primary"
-              : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              ? "bg-sidebar-accent text-sidebar-primary font-semibold"
+              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground"
           )}
         >
           {item.icon}

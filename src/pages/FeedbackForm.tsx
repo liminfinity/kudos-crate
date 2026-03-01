@@ -95,8 +95,9 @@ export default function FeedbackForm() {
   const filteredUsers = useMemo(() => otherUsers.filter(p => p.full_name.toLowerCase().includes(userSearch.toLowerCase())), [otherUsers, userSearch]);
   const selectedUser = useMemo(() => profiles.find(p => p.id === toUserId), [profiles, toUserId]);
 
-  // Separate normal vs critical subcategories
-  const normalSubcats = useMemo(() => subcategories.filter(s => !s.is_critical), [subcategories]);
+  // Separate by sentiment, then critical
+  const positiveSubcats = useMemo(() => subcategories.filter(s => s.sentiment === 'positive' && !s.is_critical), [subcategories]);
+  const negativeSubcats = useMemo(() => subcategories.filter(s => s.sentiment === 'negative' && !s.is_critical), [subcategories]);
   const criticalSubcats = useMemo(() => subcategories.filter(s => s.is_critical), [subcategories]);
 
   // Check if any critical subcategory is selected
@@ -304,69 +305,140 @@ export default function FeedbackForm() {
             </CardContent>
           </Card>
 
-          {/* Normal Subcategories */}
+          {/* Subcategories — split by sentiment */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Подкатегории <span className="text-muted-foreground font-normal">(1–3)</span></CardTitle>
+              <CardTitle className="text-base">Подкатегории <span className="text-muted-foreground font-normal">(1–3 всего)</span></CardTitle>
+              {selectedSubs.length >= 3 && (
+                <p className="text-xs text-chart-4 mt-1 flex items-center gap-1">
+                  <AlertCircle size={12} /> Достигнут лимит — снимите выбор, чтобы изменить
+                </p>
+              )}
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {normalSubcats.map(sub => {
-                  const Icon = getSubcategoryIcon(sub.name);
-                  return (
-                    <Tooltip key={sub.id}>
-                      <TooltipTrigger asChild>
-                        <Badge variant={selectedSubs.includes(sub.id) ? 'default' : 'outline'}
-                          className={cn("cursor-pointer text-sm py-1.5 px-3 transition-all gap-1.5",
-                            selectedSubs.includes(sub.id) ? sub.sentiment === 'positive' ? 'bg-positive hover:bg-positive/90' : 'bg-negative hover:bg-negative/90' : 'hover:bg-muted',
-                            selectedSubs.length >= 3 && !selectedSubs.includes(sub.id) && 'opacity-40 cursor-not-allowed'
-                          )}
-                          onClick={() => toggleSub(sub.id)}>
-                          <Icon size={14} />
-                          {sub.name}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>{sub.sentiment === 'positive' ? 'Позитивная' : 'Негативная'} подкатегория</TooltipContent>
-                    </Tooltip>
-                  );
-                })}
+            <CardContent className="space-y-5">
+              {/* Positive section */}
+              <div>
+                <p className="text-xs font-semibold text-positive mb-2 flex items-center gap-1.5 uppercase tracking-wide">
+                  <CheckCircle2 size={13} /> Позитивные
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {positiveSubcats.map(sub => {
+                    const Icon = getSubcategoryIcon(sub.name);
+                    const selected = selectedSubs.includes(sub.id);
+                    const disabled = selectedSubs.length >= 3 && !selected;
+                    return (
+                      <Tooltip key={sub.id}>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={() => !disabled && toggleSub(sub.id)}
+                            className={cn(
+                              "inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-all",
+                              selected
+                                ? "bg-positive/15 border-positive/40 text-positive ring-1 ring-positive/20"
+                                : "bg-card border-border text-foreground hover:bg-positive/5 hover:border-positive/25",
+                              disabled && "opacity-35 cursor-not-allowed"
+                            )}
+                          >
+                            <Icon size={15} />
+                            {sub.name}
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Позитивная подкатегория</TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
               </div>
-              {selectedSubs.length === 0 && <p className="text-xs text-muted-foreground mt-2">Выберите хотя бы одну подкатегорию</p>}
+
+              {/* Negative section */}
+              <div>
+                <p className="text-xs font-semibold text-negative mb-2 flex items-center gap-1.5 uppercase tracking-wide">
+                  <AlertCircle size={13} /> Негативные
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {negativeSubcats.map(sub => {
+                    const Icon = getSubcategoryIcon(sub.name);
+                    const selected = selectedSubs.includes(sub.id);
+                    const disabled = selectedSubs.length >= 3 && !selected;
+                    return (
+                      <Tooltip key={sub.id}>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={() => !disabled && toggleSub(sub.id)}
+                            className={cn(
+                              "inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-all",
+                              selected
+                                ? "bg-negative/15 border-negative/40 text-negative ring-1 ring-negative/20"
+                                : "bg-card border-border text-foreground hover:bg-negative/5 hover:border-negative/25",
+                              disabled && "opacity-35 cursor-not-allowed"
+                            )}
+                          >
+                            <Icon size={15} />
+                            {sub.name}
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Негативная подкатегория</TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {selectedSubs.length === 0 && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertCircle size={12} /> Выберите хотя бы одну подкатегорию
+                </p>
+              )}
+              {selectedSubs.length > 0 && (
+                <p className="text-xs text-muted-foreground">Выбрано: {selectedSubs.length}/3</p>
+              )}
             </CardContent>
           </Card>
 
           {/* Critical Subcategories */}
-          <Card className="border-destructive/30">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <AlertTriangle size={16} className="text-destructive" />
-                Серьёзные нарушения
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {criticalSubcats.map(sub => {
-                  const Icon = getSubcategoryIcon(sub.name);
-                  return (
-                    <Tooltip key={sub.id}>
-                      <TooltipTrigger asChild>
-                        <Badge variant={selectedSubs.includes(sub.id) ? 'default' : 'outline'}
-                          className={cn("cursor-pointer text-sm py-1.5 px-3 transition-all gap-1.5",
-                            selectedSubs.includes(sub.id) ? 'bg-destructive hover:bg-destructive/90' : 'hover:bg-destructive/10 border-destructive/30',
-                            selectedSubs.length >= 3 && !selectedSubs.includes(sub.id) && 'opacity-40 cursor-not-allowed'
-                          )}
-                          onClick={() => toggleSub(sub.id)}>
-                          <Icon size={14} />
-                          {sub.name}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>Серьёзное нарушение — будет видно HR</TooltipContent>
-                    </Tooltip>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          {criticalSubcats.length > 0 && (
+            <Card className="border-destructive/20 bg-destructive/[0.02]">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <AlertTriangle size={16} className="text-destructive" />
+                  Серьёзные нарушения
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">Будет видно только HR и администраторам</p>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {criticalSubcats.map(sub => {
+                    const Icon = getSubcategoryIcon(sub.name);
+                    const selected = selectedSubs.includes(sub.id);
+                    const disabled = selectedSubs.length >= 3 && !selected;
+                    return (
+                      <Tooltip key={sub.id}>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={() => !disabled && toggleSub(sub.id)}
+                            className={cn(
+                              "inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-all",
+                              selected
+                                ? "bg-destructive/15 border-destructive/40 text-destructive ring-1 ring-destructive/20"
+                                : "bg-card border-destructive/20 text-foreground hover:bg-destructive/5 hover:border-destructive/30",
+                              disabled && "opacity-35 cursor-not-allowed"
+                            )}
+                          >
+                            <Icon size={15} />
+                            {sub.name}
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Серьёзное нарушение — будет видно HR</TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Comment */}
           <Card>
