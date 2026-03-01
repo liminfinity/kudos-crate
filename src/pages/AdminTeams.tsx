@@ -93,8 +93,8 @@ export default function AdminTeams() {
           <Button onClick={openCreate} className="gap-1"><Plus size={16} /> Создать</Button>
         </div>
         <Card>
-          <CardContent className="pt-4">
-            <Table>
+          <CardContent className="pt-4 overflow-x-auto">
+            <Table className="min-w-[500px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Название</TableHead>

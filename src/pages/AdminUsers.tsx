@@ -195,8 +195,8 @@ export default function AdminUsers() {
         </div>
 
         <Card>
-          <CardContent className="pt-4">
-            <Table>
+          <CardContent className="pt-4 overflow-x-auto">
+            <Table className="min-w-[600px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Имя</TableHead>

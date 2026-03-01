@@ -194,11 +194,11 @@ export default function CompanyMood() {
         </Card>
 
         {/* KPI row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-primary/10"><Activity size={18} className="text-primary" /></div><div><p className="text-2xl font-bold">{nonCriticalFb.length}</p><p className="text-xs text-muted-foreground">Отзывов</p></div></div></CardContent></Card>
-          <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-positive/10"><TrendingUp size={18} className="text-positive" /></div><div><p className="text-2xl font-bold">{nonCriticalFb.filter(f => f.sentiment === 'positive').length}</p><p className="text-xs text-muted-foreground">Позитивных</p></div></div></CardContent></Card>
-          <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-primary/10"><Users size={18} className="text-primary" /></div><div><p className="text-2xl font-bold">{teams.length}</p><p className="text-xs text-muted-foreground">Команд</p></div></div></CardContent></Card>
-          <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-positive/10"><CheckCircle2 size={18} className="text-positive" /></div><div><p className="text-2xl font-bold">{completionRate}%</p><p className="text-xs text-muted-foreground">Опросы заполнены</p></div></div></CardContent></Card>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <Card><CardContent className="pt-4 sm:pt-5"><div className="flex items-center gap-2 sm:gap-3"><div className="p-1.5 sm:p-2 rounded-lg bg-primary/10"><Activity size={16} className="text-primary" /></div><div><p className="text-xl sm:text-2xl font-bold">{nonCriticalFb.length}</p><p className="text-[10px] sm:text-xs text-muted-foreground">Отзывов</p></div></div></CardContent></Card>
+          <Card><CardContent className="pt-4 sm:pt-5"><div className="flex items-center gap-2 sm:gap-3"><div className="p-1.5 sm:p-2 rounded-lg bg-positive/10"><TrendingUp size={16} className="text-positive" /></div><div><p className="text-xl sm:text-2xl font-bold">{nonCriticalFb.filter(f => f.sentiment === 'positive').length}</p><p className="text-[10px] sm:text-xs text-muted-foreground">Позитивных</p></div></div></CardContent></Card>
+          <Card><CardContent className="pt-4 sm:pt-5"><div className="flex items-center gap-2 sm:gap-3"><div className="p-1.5 sm:p-2 rounded-lg bg-primary/10"><Users size={16} className="text-primary" /></div><div><p className="text-xl sm:text-2xl font-bold">{teams.length}</p><p className="text-[10px] sm:text-xs text-muted-foreground">Команд</p></div></div></CardContent></Card>
+          <Card><CardContent className="pt-4 sm:pt-5"><div className="flex items-center gap-2 sm:gap-3"><div className="p-1.5 sm:p-2 rounded-lg bg-positive/10"><CheckCircle2 size={16} className="text-positive" /></div><div><p className="text-xl sm:text-2xl font-bold">{completionRate}%</p><p className="text-[10px] sm:text-xs text-muted-foreground">Опросы заполнены</p></div></div></CardContent></Card>
         </div>
 
         {/* Monthly timeline */}

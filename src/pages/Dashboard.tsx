@@ -241,11 +241,11 @@ export default function Dashboard() {
         </Card>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-primary/10"><MessageSquare size={18} className="text-primary" /></div><div><p className="text-2xl font-bold">{totalCount}</p><p className="text-xs text-muted-foreground">Всего отзывов</p></div></div></CardContent></Card>
-          <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-positive/10"><TrendingUp size={18} className="text-positive" /></div><div><p className="text-2xl font-bold">{positiveCount}</p><p className="text-xs text-muted-foreground">Позитивных</p></div></div></CardContent></Card>
-          <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-negative/10"><TrendingDown size={18} className="text-negative" /></div><div><p className="text-2xl font-bold">{negativeCount}</p><p className="text-xs text-muted-foreground">Негативных</p></div></div></CardContent></Card>
-          <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-primary/10"><BarChart3 size={18} className="text-primary" /></div><div><p className="text-2xl font-bold">{positiveRatio}%</p><p className="text-xs text-muted-foreground">Позитивных</p></div></div></CardContent></Card>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <Card><CardContent className="pt-4 sm:pt-5"><div className="flex items-center gap-2 sm:gap-3"><div className="p-1.5 sm:p-2 rounded-lg bg-primary/10"><MessageSquare size={16} className="text-primary sm:hidden" /><MessageSquare size={18} className="text-primary hidden sm:block" /></div><div><p className="text-xl sm:text-2xl font-bold">{totalCount}</p><p className="text-[10px] sm:text-xs text-muted-foreground">Всего отзывов</p></div></div></CardContent></Card>
+          <Card><CardContent className="pt-4 sm:pt-5"><div className="flex items-center gap-2 sm:gap-3"><div className="p-1.5 sm:p-2 rounded-lg bg-positive/10"><TrendingUp size={16} className="text-positive sm:hidden" /><TrendingUp size={18} className="text-positive hidden sm:block" /></div><div><p className="text-xl sm:text-2xl font-bold">{positiveCount}</p><p className="text-[10px] sm:text-xs text-muted-foreground">Позитивных</p></div></div></CardContent></Card>
+          <Card><CardContent className="pt-4 sm:pt-5"><div className="flex items-center gap-2 sm:gap-3"><div className="p-1.5 sm:p-2 rounded-lg bg-negative/10"><TrendingDown size={16} className="text-negative sm:hidden" /><TrendingDown size={18} className="text-negative hidden sm:block" /></div><div><p className="text-xl sm:text-2xl font-bold">{negativeCount}</p><p className="text-[10px] sm:text-xs text-muted-foreground">Негативных</p></div></div></CardContent></Card>
+          <Card><CardContent className="pt-4 sm:pt-5"><div className="flex items-center gap-2 sm:gap-3"><div className="p-1.5 sm:p-2 rounded-lg bg-primary/10"><BarChart3 size={16} className="text-primary sm:hidden" /><BarChart3 size={18} className="text-primary hidden sm:block" /></div><div><p className="text-xl sm:text-2xl font-bold">{positiveRatio}%</p><p className="text-[10px] sm:text-xs text-muted-foreground">Позитивных</p></div></div></CardContent></Card>
         </div>
 
         {/* Mira insight */}
@@ -262,7 +262,7 @@ export default function Dashboard() {
         <EmployeeBarChart profiles={profiles} feedbackEdges={graphEdges} />
 
         {/* Top subcategories */}
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardHeader><CardTitle className="text-base text-positive">Топ позитивных подкатегорий</CardTitle></CardHeader>
             <CardContent>
@@ -271,7 +271,7 @@ export default function Dashboard() {
                   <RBarChart data={topSubcats.positive} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis type="number" tick={{ fontSize: 11 }} />
-                    <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 11 }} />
+                    <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 10 }} />
                     <Tooltip />
                     <Bar dataKey="count" fill="hsl(var(--positive))" radius={[0, 4, 4, 0]} name="Кол-во" />
                   </RBarChart>
@@ -287,7 +287,7 @@ export default function Dashboard() {
                   <RBarChart data={topSubcats.negative} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis type="number" tick={{ fontSize: 11 }} />
-                    <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 11 }} />
+                    <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 10 }} />
                     <Tooltip />
                     <Bar dataKey="count" fill="hsl(var(--negative))" radius={[0, 4, 4, 0]} name="Кол-во" />
                   </RBarChart>
@@ -344,14 +344,13 @@ export default function Dashboard() {
             <CardContent>
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {filtered.map(f => (
-                  <div key={f.id} className="p-3 rounded-lg bg-muted/50 text-sm">
-                    <div className="flex items-center gap-2 mb-1">
+                   <div key={f.id} className="p-3 rounded-lg bg-muted/50 text-sm">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
                       <Badge variant={f.sentiment === 'positive' ? 'default' : 'destructive'} className={cn("text-xs", f.sentiment === 'positive' && 'bg-positive')}>{f.sentiment === 'positive' ? 'Позитивный' : 'Негативный'}</Badge>
                       <span className="text-xs text-muted-foreground">{format(parseISO(f.created_at), 'dd.MM.yyyy')}</span>
-                      <span className="text-xs text-muted-foreground">→ {profileMap[f.to_user_id]?.full_name}</span>
-                      <span className="text-xs text-muted-foreground">({episodes[f.episode_id] || ''})</span>
+                      <span className="text-xs text-muted-foreground truncate max-w-[120px] sm:max-w-none">→ {profileMap[f.to_user_id]?.full_name}</span>
                     </div>
-                    <p className="text-foreground">{f.comment}</p>
+                    <p className="text-foreground break-words">{f.comment}</p>
                   </div>
                 ))}
                 {filtered.length === 0 && <p className="text-center text-muted-foreground py-4">Нет комментариев</p>}
