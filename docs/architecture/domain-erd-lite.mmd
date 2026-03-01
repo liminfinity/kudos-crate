@@ -1,0 +1,146 @@
+%% МИРА — Domain ERD-lite
+%% Доменная модель: ключевые сущности и связи
+
+erDiagram
+    profiles {
+        uuid id PK
+        text email
+        text full_name
+        uuid team_id FK
+        bool is_active
+    }
+
+    user_roles {
+        uuid id PK
+        uuid user_id FK
+        enum role "employee|manager|hr|admin"
+    }
+
+    teams {
+        uuid id PK
+        text name
+        uuid manager_user_id FK
+    }
+
+    work_episodes {
+        uuid id PK
+        text title
+        date date
+        uuid team_id FK
+        uuid created_by FK
+    }
+
+    feedback {
+        uuid id PK
+        uuid episode_id FK
+        uuid from_user_id FK
+        uuid to_user_id FK
+        enum sentiment "positive|negative"
+        text comment
+        bool is_critical
+    }
+
+    feedback_subcategories {
+        uuid feedback_id FK
+        uuid subcategory_id FK
+    }
+
+    subcategories {
+        uuid id PK
+        text name
+        enum sentiment "positive|negative"
+        bool is_critical
+    }
+
+    kudos {
+        uuid id PK
+        uuid from_user_id FK
+        uuid to_user_id FK
+        enum category
+        text comment
+    }
+
+    feedback_180 {
+        uuid id PK
+        uuid from_user_id FK
+        uuid to_user_id FK
+        text period
+        int collaboration_score
+        text text_long
+    }
+
+    review_360_cycles {
+        uuid id PK
+        text title
+        int year
+        text status "draft|published|closed"
+        uuid created_by FK
+    }
+
+    review_360_assignments {
+        uuid id PK
+        uuid cycle_id FK
+        uuid reviewer_user_id FK
+        uuid reviewee_user_id FK
+        text status "not_started|submitted"
+    }
+
+    review_360_responses {
+        uuid id PK
+        uuid assignment_id FK
+        jsonb answers_json
+    }
+
+    survey_templates {
+        uuid id PK
+        text name
+        enum type "half_year|bi_month"
+        jsonb schema_json
+    }
+
+    survey_cycles {
+        uuid id PK
+        uuid template_id FK
+        text label
+        enum status "draft|open|closed"
+    }
+
+    survey_assignments {
+        uuid id PK
+        uuid cycle_id FK
+        uuid user_id FK
+        uuid team_id FK
+        enum status
+    }
+
+    survey_responses {
+        uuid id PK
+        uuid assignment_id FK
+        jsonb answers_json
+    }
+
+    embed_responses {
+        uuid id PK
+        uuid cycle_id FK
+        uuid template_id FK
+        jsonb answers_json
+        text source
+    }
+
+    profiles ||--o{ user_roles : "has"
+    profiles }o--|| teams : "belongs to"
+    teams ||--o{ work_episodes : "has"
+    work_episodes ||--o{ feedback : "receives"
+    profiles ||--o{ feedback : "gives/receives"
+    feedback ||--o{ feedback_subcategories : "tagged"
+    subcategories ||--o{ feedback_subcategories : "used in"
+    profiles ||--o{ kudos : "gives/receives"
+    profiles ||--o{ feedback_180 : "gives/receives"
+    review_360_cycles ||--o{ review_360_assignments : "contains"
+    profiles ||--o{ review_360_assignments : "reviewer/reviewee"
+    review_360_assignments ||--|| review_360_responses : "has"
+    survey_templates ||--o{ survey_cycles : "defines"
+    survey_cycles ||--o{ survey_assignments : "contains"
+    survey_assignments ||--o{ survey_responses : "has"
+    profiles ||--o{ survey_assignments : "assigned to"
+    survey_cycles ||--o{ embed_responses : "receives"

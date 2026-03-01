@@ -1,0 +1,47 @@
+%% МИРА — C4 Container Diagram (Level 2)
+%% Показывает основные контейнеры системы и их взаимодействие
+
+graph TB
+    subgraph client["Клиент (Браузер)"]
+        SPA["React SPA\nVite + TypeScript\nTailwind CSS + shadcn/ui"]
+        EMBED["Embed Widgets\niframe: Survey, Feedback,\nKudos, Top Kudos, CTA"]
+    end
+
+    subgraph backend["Backend (Edge Functions / Deno)"]
+        EF_TEXT["process-text\nAI-модерация"]
+        EF_ASSIST["assistant\nКонтекстная помощь"]
+        EF_REC["recommendations\nAI-рекомендации"]
+        EF_360["generate-360-assignments\nРаспределение ревьюеров"]
+        EF_ADMIN["admin-users\nУправление пользователями"]
+        EF_CRON["survey-cron\nПланировщик опросов"]
+        EF_SEED["seed-data\nДемо-данные"]
+        EF_TOPK["top-kudos\nТоп по благодарностям"]
+    end
+
+    subgraph data["Данные"]
+        DB["PostgreSQL 16\n+ RLS-политики\n17 таблиц"]
+        AUTH["Auth Service\nJWT + Sessions"]
+    end
+
+    AI["AI Gateway\nLovable AI\nGemini 3 Flash"]
+
+    SPA -->|"Supabase JS SDK\n(прямые запросы через RLS)"| DB
+    SPA -->|"JWT Auth"| AUTH
+    SPA -->|"invoke()"| EF_TEXT
+    SPA -->|"invoke()"| EF_ASSIST
+    SPA -->|"invoke()"| EF_REC
+    SPA -->|"invoke()"| EF_360
+    SPA -->|"invoke()"| EF_ADMIN
+
+    EMBED -->|"fetch API"| EF_TOPK
+    EMBED -->|"Supabase SDK"| DB
+
+    EF_TEXT -->|"LLM API"| AI
+    EF_ASSIST -->|"LLM API"| AI
+    EF_REC -->|"LLM API"| AI
+
+    EF_360 -->|"Service Role"| DB
+    EF_ADMIN -->|"Service Role"| DB
+    EF_CRON -->|"Service Role"| DB
+    EF_SEED -->|"Service Role"| DB
+    EF_TOPK -->|"Service Role"| DB

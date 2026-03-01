@@ -127,50 +127,40 @@
 
 ## 🏗 Архитектура проекта
 
+> Подробные диаграммы в формате Mermaid: [`docs/architecture/`](docs/architecture/)
+> Открывайте в GitHub, [Mermaid Live Editor](https://mermaid.live), draw.io или Excalidraw.
+
+### Обзор компонентов
+
 ```
 МИРА
 ├── Frontend (React SPA)
-│   ├── Секции с вложенной навигацией:
-│   │   ├── Отзыв     → Отзыв, Благодарность
-│   │   ├── Опросы     → Опросы, Отзыв 180, Задания 360
-│   │   ├── Аналитика  → 10 дашбордов
-│   │   └── Админка    → Пользователи, Команды, Эпизоды, Подкатегории, Embed
-│   ├── AuthContext    → JWT-аутентификация + RBAC
-│   └── SettingsContext → Пользовательские настройки
+│   ├── Отзыв → Отзыв, Благодарность
+│   ├── Опросы → Опросы, Отзыв 180, Задания 360
+│   ├── Аналитика → 10 дашбордов
+│   ├── Админка → Пользователи, Команды, Эпизоды, Embed
+│   ├── AuthContext → JWT + RBAC
+│   └── SettingsContext → Настройки
 │
-├── Backend (Edge Functions)
-│   ├── process-text      → AI-модерация текста
-│   ├── assistant         → Контекстный AI-ассистент
-│   ├── recommendations   → AI-рекомендации по развитию
-│   ├── generate-360-assignments → Автоматическое распределение ревьюеров
-│   ├── admin-users       → Управление пользователями (admin)
-│   ├── survey-cron       → Планировщик автоматических опросов
-│   └── seed-data         → Генерация демо-данных
+├── Backend (Edge Functions / Deno)
+│   ├── process-text, assistant, recommendations → AI
+│   ├── generate-360-assignments → Распределение
+│   ├── admin-users, survey-cron, seed-data
+│   └── top-kudos → Embed API
 │
-├── База данных (PostgreSQL)
-│   ├── profiles           → Профили пользователей
-│   ├── user_roles         → Роли (employee, manager, hr, admin)
-│   ├── teams              → Команды
-│   ├── work_episodes      → Рабочие эпизоды
-│   ├── feedback           → Обратная связь
-│   ├── feedback_subcategories → Подкатегории отзывов
-│   ├── subcategories      → Справочник подкатегорий
-│   ├── kudos              → Благодарности
-│   ├── feedback_180       → Отзывы 180°
-│   ├── review_360_cycles  → Циклы 360°
-│   ├── review_360_assignments → Назначения ревьюеров
-│   ├── review_360_responses → Ответы 360°
-│   ├── survey_templates   → Шаблоны опросов
-│   ├── survey_cycles      → Циклы опросов
-│   ├── survey_assignments → Назначения опросов
-│   ├── survey_responses   → Ответы опросов
-│   └── embed_responses    → Ответы из embed-форм
-│
-└── Docker
-    ├── Dockerfile          → Multi-stage build (deps → build → serve)
-    ├── docker-compose.yml  → Dev (hot reload + PostgreSQL)
-    └── docker-compose.prod.yml → Prod (Nginx + healthcheck)
+├── PostgreSQL 16 (17 таблиц + RLS)
+├── Embed (Survey, Feedback, Kudos, Top Kudos, CTA)
+└── Docker (dev + prod)
 ```
+
+### Архитектурные диаграммы
+
+| Диаграмма | Файл | Описание |
+|-----------|------|----------|
+| C4 Context | [`context.mmd`](docs/architecture/context.mmd) | Пользователи и внешние системы |
+| C4 Containers | [`containers.mmd`](docs/architecture/containers.mmd) | SPA, Edge Functions, БД, AI |
+| Backend Components | [`backend-components.mmd`](docs/architecture/backend-components.mmd) | Auth, Feedback, Kudos, Surveys, 360, Analytics, Embed, LLM |
+| Domain ERD | [`domain-erd-lite.mmd`](docs/architecture/domain-erd-lite.mmd) | 17 сущностей и связи |
 
 ### Схема взаимодействия
 
@@ -187,6 +177,13 @@
      └────────────────────►│  AI Gateway  │
                            └──────────────┘
 ```
+
+### Инструменты для диаграмм
+
+- **[Mermaid Live Editor](https://mermaid.live)** — онлайн, экспорт SVG/PNG
+- **GitHub** — рендерит `.mmd` автоматически
+- **[draw.io](https://app.diagrams.net)** — импорт Mermaid
+- **[Excalidraw](https://excalidraw.com)** — «ручные» схемы
 
 ---
 
