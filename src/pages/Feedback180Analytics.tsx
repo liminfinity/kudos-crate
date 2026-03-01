@@ -58,7 +58,6 @@ export default function Feedback180Analytics() {
   }, [filteredReviews]);
 
   return (
-    <AppLayout>
       <div className="max-w-4xl mx-auto animate-fade-in">
         <h1 className="text-2xl font-bold mb-1">Отзывы 180 — Аналитика</h1>
         <p className="text-muted-foreground mb-6">Общие характеристики сотрудников (анонимные)</p>
@@ -159,7 +158,6 @@ export default function Feedback180Analytics() {
             </Card>
           </div>
         )}
-      </div>
-    </AppLayout>
+    </div>
   );
 }

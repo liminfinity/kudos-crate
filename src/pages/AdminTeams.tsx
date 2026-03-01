@@ -84,7 +84,6 @@ export default function AdminTeams() {
   }
 
   return (
-    <AppLayout>
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <div>
@@ -147,7 +146,6 @@ export default function AdminTeams() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
-    </AppLayout>
+    </div>
   );
 }

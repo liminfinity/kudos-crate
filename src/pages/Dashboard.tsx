@@ -181,26 +181,7 @@ export default function Dashboard() {
   }
 
   return (
-    <AppLayout>
       <div className="space-y-6 animate-fade-in">
-        {/* Quick nav to sub-analytics */}
-        <div className="flex flex-wrap gap-2 mb-2">
-          {[
-            { label: 'Благодарности', path: '/kudos/dashboard', icon: <Award size={14} /> },
-            { label: 'Удовлетворённость', path: '/satisfaction', icon: <ThumbsUp size={14} /> },
-            { label: 'Вовлечённость', path: '/engagement', icon: <Zap size={14} /> },
-            { label: 'Полугодовой срез', path: '/analytics/half-year', icon: <PieChart size={14} /> },
-            { label: 'Дневник руководителя', path: '/leader-diary', icon: <BookOpen size={14} /> },
-            { label: 'Отзывы 180', path: '/feedback-180/analytics', icon: <UserCheck size={14} /> },
-            { label: 'Отзывы 360', path: '/review-360', icon: <RotateCcw size={14} /> },
-            { label: 'Сигналы', path: '/incidents', icon: <AlertTriangle size={14} /> },
-            { label: 'Рекомендации', path: '/recommendations', icon: <Lightbulb size={14} /> },
-          ].map(item => (
-            <Link key={item.path} to={item.path}>
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs">{item.icon}{item.label}</Button>
-            </Link>
-          ))}
-        </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -385,7 +366,6 @@ export default function Dashboard() {
         {/* Heatmap */}
         <InteractionHeatmap profiles={profiles} feedbackEdges={graphEdges} teams={teams} />
 
-      </div>
-    </AppLayout>
+    </div>
   );
 }

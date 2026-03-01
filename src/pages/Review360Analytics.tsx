@@ -96,7 +96,6 @@ export default function Review360Analytics() {
   }, [assignments, responses, selectedUserId, profileMap, responseMap]);
 
   return (
-    <AppLayout>
       <div className="max-w-4xl mx-auto animate-fade-in">
         <h1 className="text-2xl font-bold mb-1">Аналитика 360{cycle ? `: ${cycle.title}` : ''}</h1>
         <p className="text-muted-foreground mb-6">Результаты ревью (анонимные)</p>
@@ -176,7 +175,6 @@ export default function Review360Analytics() {
             ))}
           </div>
         )}
-      </div>
-    </AppLayout>
+    </div>
   );
 }

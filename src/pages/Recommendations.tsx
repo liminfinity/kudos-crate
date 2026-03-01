@@ -123,7 +123,6 @@ export default function Recommendations() {
   const defaultTab = availableTabs[0]?.value || 'employee';
 
   return (
-    <AppLayout>
       <div className="space-y-6 animate-fade-in">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -181,7 +180,6 @@ export default function Recommendations() {
             </TabsContent>
           ))}
         </Tabs>
-      </div>
-    </AppLayout>
+    </div>
   );
 }

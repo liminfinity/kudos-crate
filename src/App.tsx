@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { FeedbackSectionLayout, SurveySectionLayout, AnalyticsSectionLayout, AdminSectionLayout } from "@/components/SectionLayouts";
+import { AppLayout } from "@/components/AppLayout";
 import Login from "./pages/Login";
 import FeedbackForm from "./pages/FeedbackForm";
 import Dashboard from "./pages/Dashboard";
@@ -59,35 +61,62 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<RootRedirect />} />
-            <Route path="/feedback/new" element={<ProtectedRoute><FeedbackForm /></ProtectedRoute>} />
-            <Route path="/feedback-180" element={<ProtectedRoute><Feedback180Form /></ProtectedRoute>} />
-            <Route path="/feedback-180/analytics" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><Feedback180Analytics /></ProtectedRoute>} />
-            <Route path="/kudos/new" element={<ProtectedRoute><KudosForm /></ProtectedRoute>} />
-            <Route path="/mood" element={<ProtectedRoute><CompanyMood /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><Dashboard /></ProtectedRoute>} />
-            <Route path="/kudos/dashboard" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><KudosDashboard /></ProtectedRoute>} />
-            <Route path="/subcategories" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><SubcategoriesPage /></ProtectedRoute>} />
-            <Route path="/surveys" element={<ProtectedRoute><SurveyList /></ProtectedRoute>} />
+
+            {/* Feedback section — persistent tabs */}
+            <Route element={<ProtectedRoute><FeedbackSectionLayout /></ProtectedRoute>}>
+              <Route path="/feedback/new" element={<FeedbackForm />} />
+              <Route path="/feedback-180" element={<Feedback180Form />} />
+              <Route path="/kudos/new" element={<KudosForm />} />
+            </Route>
+
+            {/* Surveys section — persistent tabs */}
+            <Route element={<ProtectedRoute><SurveySectionLayout /></ProtectedRoute>}>
+              <Route path="/surveys" element={<SurveyList />} />
+              <Route path="/review-360/tasks" element={<Review360Tasks />} />
+            </Route>
+
+            {/* Survey filling (no section nav, own layout) */}
             <Route path="/surveys/:assignmentId" element={<ProtectedRoute><HalfYearSurveyForm /></ProtectedRoute>} />
-            <Route path="/leader-diary" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><LeaderDiaryList /></ProtectedRoute>} />
-            <Route path="/leader-diary/:assignmentId" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><LeaderDiaryForm /></ProtectedRoute>} />
-            <Route path="/analytics/half-year" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><SurveyAnalytics /></ProtectedRoute>} />
-            <Route path="/satisfaction" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><SatisfactionAnalytics /></ProtectedRoute>} />
-            <Route path="/engagement" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><EngagementAnalytics /></ProtectedRoute>} />
-            <Route path="/recommendations" element={<ProtectedRoute><Recommendations /></ProtectedRoute>} />
-            <Route path="/incidents" element={<ProtectedRoute allowedRoles={['hr', 'admin']}><CriticalIncidents /></ProtectedRoute>} />
-            <Route path="/review-360" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><Review360Cycles /></ProtectedRoute>} />
-            <Route path="/review-360/tasks" element={<ProtectedRoute><Review360Tasks /></ProtectedRoute>} />
             <Route path="/review-360/fill/:assignmentId" element={<ProtectedRoute><Review360Fill /></ProtectedRoute>} />
-            <Route path="/review-360/:cycleId/analytics" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><Review360Analytics /></ProtectedRoute>} />
-            <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute>} />
-            <Route path="/admin/teams" element={<ProtectedRoute allowedRoles={['admin']}><AdminTeams /></ProtectedRoute>} />
-            <Route path="/admin/episodes" element={<ProtectedRoute allowedRoles={['admin']}><AdminEpisodes /></ProtectedRoute>} />
-            <Route path="/admin/embed" element={<ProtectedRoute allowedRoles={['admin']}><EmbedSettings /></ProtectedRoute>} />
+
+            {/* Mood — standalone */}
+            <Route path="/mood" element={<ProtectedRoute><CompanyMood /></ProtectedRoute>} />
+
+            {/* Analytics section — persistent tabs */}
+            <Route element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><AnalyticsSectionLayout /></ProtectedRoute>}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/kudos/dashboard" element={<KudosDashboard />} />
+              <Route path="/satisfaction" element={<SatisfactionAnalytics />} />
+              <Route path="/engagement" element={<EngagementAnalytics />} />
+              <Route path="/analytics/half-year" element={<SurveyAnalytics />} />
+              <Route path="/leader-diary" element={<LeaderDiaryList />} />
+              <Route path="/feedback-180/analytics" element={<Feedback180Analytics />} />
+              <Route path="/review-360" element={<Review360Cycles />} />
+              <Route path="/review-360/:cycleId/analytics" element={<Review360Analytics />} />
+              <Route path="/incidents" element={<CriticalIncidents />} />
+              <Route path="/recommendations" element={<Recommendations />} />
+            </Route>
+
+            {/* Leader diary form (own layout) */}
+            <Route path="/leader-diary/:assignmentId" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><LeaderDiaryForm /></ProtectedRoute>} />
+
+            {/* Admin section — persistent tabs */}
+            <Route element={<ProtectedRoute allowedRoles={['admin']}><AdminSectionLayout /></ProtectedRoute>}>
+              <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/teams" element={<AdminTeams />} />
+              <Route path="/admin/episodes" element={<AdminEpisodes />} />
+              <Route path="/subcategories" element={<SubcategoriesPage />} />
+              <Route path="/admin/embed" element={<EmbedSettings />} />
+            </Route>
+
+            {/* Settings — standalone */}
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+            {/* Embed (public) */}
             <Route path="/embed/survey/:cycleId" element={<EmbedSurvey />} />
             <Route path="/embed/feedback" element={<EmbedFeedback />} />
             <Route path="/embed/kudos" element={<EmbedKudos />} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
           <AssistantMira />
