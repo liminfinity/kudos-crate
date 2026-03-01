@@ -21,6 +21,7 @@ import {
   Zap,
   Lightbulb,
   Code2,
+  Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
@@ -52,6 +53,7 @@ const navItems: NavItem[] = [
   { label: 'Команды', path: '/admin/teams', icon: <Building2 size={18} />, roles: ['admin'] },
   { label: 'Эпизоды', path: '/admin/episodes', icon: <CalendarDays size={18} />, roles: ['admin'] },
   { label: 'Встраивание', path: '/admin/embed', icon: <Code2 size={18} />, roles: ['admin'] },
+  { label: 'Настройки', path: '/settings', icon: <Settings size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
 ];
 
 function NavLinks({ items, location, onNavigate }: { items: NavItem[]; location: ReturnType<typeof useLocation>; onNavigate?: () => void }) {

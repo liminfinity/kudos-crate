@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { SettingsProvider } from "@/contexts/SettingsContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import FeedbackForm from "./pages/FeedbackForm";
@@ -26,6 +27,7 @@ import EngagementAnalytics from "./pages/EngagementAnalytics";
 import Recommendations from "./pages/Recommendations";
 import EmbedSurvey from "./pages/EmbedSurvey";
 import EmbedSettings from "./pages/EmbedSettings";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import { AssistantMira } from "./components/AssistantMira";
 
@@ -40,6 +42,7 @@ function RootRedirect() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <SettingsProvider>
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -67,6 +70,7 @@ const App = () => (
             <Route path="/admin/teams" element={<ProtectedRoute allowedRoles={['admin']}><AdminTeams /></ProtectedRoute>} />
             <Route path="/admin/episodes" element={<ProtectedRoute allowedRoles={['admin']}><AdminEpisodes /></ProtectedRoute>} />
             <Route path="/admin/embed" element={<ProtectedRoute allowedRoles={['admin']}><EmbedSettings /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/embed/survey/:cycleId" element={<EmbedSurvey />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
@@ -74,6 +78,7 @@ const App = () => (
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
+    </SettingsProvider>
   </QueryClientProvider>
 );
 
