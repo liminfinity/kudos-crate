@@ -11,6 +11,13 @@ import {
   LogOut,
   Shield,
   Menu,
+  ClipboardList,
+  BookOpen,
+  PieChart,
+  Activity,
+  AlertTriangle,
+  Heart,
+  Award,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -25,7 +32,14 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Новый отзыв', path: '/feedback/new', icon: <MessageSquarePlus size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
+  { label: 'Kudos', path: '/kudos/new', icon: <Heart size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
+  { label: 'Мои опросы', path: '/surveys', icon: <ClipboardList size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
+  { label: 'Company Mood', path: '/mood', icon: <Activity size={18} />, roles: ['employee', 'manager', 'hr', 'admin'] },
   { label: 'Дашборд', path: '/dashboard', icon: <BarChart3 size={18} />, roles: ['manager', 'hr', 'admin'] },
+  { label: 'Kudos аналитика', path: '/kudos/dashboard', icon: <Award size={18} />, roles: ['manager', 'hr', 'admin'] },
+  { label: 'Полугодовой срез', path: '/analytics/half-year', icon: <PieChart size={18} />, roles: ['manager', 'hr', 'admin'] },
+  { label: 'Дневник лидера', path: '/leader-diary', icon: <BookOpen size={18} />, roles: ['manager', 'hr', 'admin'] },
+  { label: 'Critical Incidents', path: '/incidents', icon: <AlertTriangle size={18} />, roles: ['hr', 'admin'] },
   { label: 'Подкатегории', path: '/subcategories', icon: <Tags size={18} />, roles: ['manager', 'hr', 'admin'] },
   { label: 'Пользователи', path: '/admin/users', icon: <Users size={18} />, roles: ['admin'] },
   { label: 'Команды', path: '/admin/teams', icon: <Building2 size={18} />, roles: ['admin'] },
