@@ -1,11 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Heart, Trophy } from 'lucide-react';
-import type { Profile, Team } from '@/lib/supabase-types';
-import { subDays } from 'date-fns';
+import { useState, useEffect } from 'react';
+import { Heart, Trophy, AlertCircle } from 'lucide-react';
 
 const CATEGORY_LABELS: Record<string, string> = {
   helped_understand: 'Помог разобраться',
@@ -16,15 +10,22 @@ const CATEGORY_LABELS: Record<string, string> = {
   team_support: 'Командная поддержка',
 };
 
+interface TopReceiver {
+  name: string;
+  count: number;
+  topCategory: string;
+}
+
 export default function EmbedTopKudos() {
   const params = new URLSearchParams(window.location.search);
-  const periodParam = params.get('period') || '30d';
-  const teamIdParam = params.get('teamId') || '';
-  const limitParam = Number(params.get('limit') || '10');
+  const period = params.get('period') || '30d';
+  const teamId = params.get('teamId') || '';
+  const limit = params.get('limit') || '10';
   const theme = params.get('theme') || 'light';
 
-  const [kudos, setKudos] = useState<any[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [topReceivers, setTopReceivers] = useState<TopReceiver[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (theme === 'dark') document.documentElement.classList.add('dark');
@@ -32,44 +33,53 @@ export default function EmbedTopKudos() {
   }, []);
 
   async function loadData() {
-    const days = periodParam === '7d' ? 7 : periodParam === '90d' ? 90 : 30;
-    const startDate = subDays(new Date(), days).toISOString();
-    const [kRes, pRes] = await Promise.all([
-      supabase.from('kudos').select('*').gte('created_at', startDate),
-      supabase.from('profiles').select('*'),
-    ]);
-    if (kRes.data) setKudos(kRes.data);
-    if (pRes.data) setProfiles(pRes.data as unknown as Profile[]);
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const baseUrl = projectId
+        ? `https://${projectId}.supabase.co/functions/v1`
+        : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+
+      const queryParams = new URLSearchParams({ period, limit });
+      if (teamId) queryParams.set('teamId', teamId);
+
+      const res = await fetch(`${baseUrl}/top-kudos?${queryParams}`, {
+        headers: {
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setTopReceivers(json.data || []);
+    } catch (e) {
+      console.error('Failed to load top kudos:', e);
+      setError('Не удалось загрузить данные');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const profileMap = useMemo(() => {
-    const m: Record<string, Profile> = {};
-    profiles.forEach(p => { m[p.id] = p; });
-    return m;
-  }, [profiles]);
+  const periodLabel = period === '7d' ? '7 дней' : period === '90d' ? '90 дней' : '30 дней';
 
-  const topReceivers = useMemo(() => {
-    let filtered = kudos;
-    if (teamIdParam) {
-      filtered = kudos.filter(k => profileMap[k.to_user_id]?.team_id === teamIdParam);
-    }
-    const counts: Record<string, { count: number; categories: Record<string, number> }> = {};
-    filtered.forEach(k => {
-      if (!counts[k.to_user_id]) counts[k.to_user_id] = { count: 0, categories: {} };
-      counts[k.to_user_id].count++;
-      counts[k.to_user_id].categories[k.category] = (counts[k.to_user_id].categories[k.category] || 0) + 1;
-    });
-    return Object.entries(counts)
-      .sort(([, a], [, b]) => b.count - a.count)
-      .slice(0, limitParam)
-      .map(([uid, d]) => ({
-        name: profileMap[uid]?.full_name || 'Сотрудник',
-        count: d.count,
-        topCategory: Object.entries(d.categories).sort(([, a], [, b]) => b - a)[0]?.[0] || '',
-      }));
-  }, [kudos, profileMap, teamIdParam, limitParam]);
+  if (loading) {
+    return (
+      <div className="p-4 max-w-lg mx-auto font-sans flex items-center justify-center min-h-[200px]">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
-  const periodLabel = periodParam === '7d' ? '7 дней' : periodParam === '90d' ? '90 дней' : '30 дней';
+  if (error) {
+    return (
+      <div className="p-4 max-w-lg mx-auto font-sans">
+        <div className="flex items-center gap-2 text-destructive py-8 justify-center">
+          <AlertCircle size={18} />
+          <span className="text-sm">{error}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 max-w-lg mx-auto font-sans">
@@ -95,7 +105,7 @@ export default function EmbedTopKudos() {
           </div>
         ))}
         {topReceivers.length === 0 && (
-          <p className="text-muted-foreground text-sm text-center py-8">Нет данных за выбранный период</p>
+          <p className="text-muted-foreground text-sm text-center py-8">Пока нет благодарностей за выбранный период</p>
         )}
       </div>
       <p className="text-[10px] text-muted-foreground text-center mt-4">Powered by МИРА</p>

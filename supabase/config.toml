@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.generate-360-assignments]
 verify_jwt = false
+
+[functions.top-kudos]
+verify_jwt = false
