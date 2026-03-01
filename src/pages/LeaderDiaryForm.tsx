@@ -11,8 +11,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTextProcessor } from '@/hooks/useTextProcessor';
 
 const STEPS = [
   'Общая информация',
@@ -147,6 +148,7 @@ export default function LeaderDiaryForm() {
   const [readOnly, setReadOnly] = useState(false);
   const [assignmentData, setAssignmentData] = useState<any>(null);
   const [error, setError] = useState('');
+  const { processText, processing } = useTextProcessor();
 
   useEffect(() => { loadData(); }, [assignmentId]);
 
@@ -195,11 +197,25 @@ export default function LeaderDiaryForm() {
     if (!assignmentId || readOnly) return;
     setSubmitting(true); setError('');
     try {
+      // Process text fields with AI
+      const textFields: (keyof DiaryAnswers)[] = ['key_projects', 'projects_good', 'projects_stuck', 'projects_deadline_risk', 'projects_quality_issues', 'projects_completed', 'projects_failed', 'notable_employees', 'difficulty_employees', 'difficulty_impact', 'good_processes', 'bad_processes', 'hard_teams', 'good_teams', 'key_risks', 'attention_needed', 'deadline_threats', 'decisions_made', 'what_worked', 'what_failed', 'next_period_changes', 'help_needed', 'free_comment'];
+      const processedAnswers = { ...answers };
+      for (const field of textFields) {
+        const val = processedAnswers[field];
+        if (typeof val === 'string' && val.trim().length > 3) {
+          const result = await processText(val, 'manager-diary');
+          if (result?.processed_text) {
+            (processedAnswers as any)[field] = result.processed_text;
+          }
+        }
+      }
+      setAnswers(processedAnswers);
+
       const { data: existing } = await supabase.from('survey_responses').select('id').eq('assignment_id', assignmentId).maybeSingle();
       if (existing) {
-        await supabase.from('survey_responses').update({ answers_json: answers as any }).eq('id', existing.id);
+        await supabase.from('survey_responses').update({ answers_json: processedAnswers as any }).eq('id', existing.id);
       } else {
-        await supabase.from('survey_responses').insert({ assignment_id: assignmentId, answers_json: answers as any });
+        await supabase.from('survey_responses').insert({ assignment_id: assignmentId, answers_json: processedAnswers as any });
       }
       await supabase.from('survey_assignments').update({ status: 'submitted' as any, submitted_at: new Date().toISOString() }).eq('id', assignmentId);
       setSubmitted(true);
