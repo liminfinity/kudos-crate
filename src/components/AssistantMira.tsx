@@ -137,19 +137,19 @@ export function AssistantMira() {
     <>
       {/* Onboarding tooltip */}
       {showOnboarding && !open && (
-        <div className="fixed bottom-16 right-4 z-50 max-w-[240px] animate-fade-in">
-          <div className="bg-card border rounded-xl shadow-card-hover p-3 relative">
-            <button onClick={() => setShowOnboarding(false)} className="absolute top-2 right-2 text-muted-foreground hover:text-foreground transition-colors">
+        <div className="fixed bottom-16 right-4 z-50 max-w-[220px]">
+          <div className="bg-card border rounded-lg shadow-card-hover p-3 relative">
+            <button onClick={() => setShowOnboarding(false)} className="absolute top-2 right-2 text-muted-foreground hover:text-foreground transition-colors duration-150">
               <X size={12} />
             </button>
-            <p className="text-xs text-muted-foreground">Я МИРА — ваш ассистент. Нажмите, чтобы задать вопрос.</p>
+            <p className="text-xs text-muted-foreground pr-4">Я МИРА — ваш ассистент. Нажмите, чтобы задать вопрос.</p>
           </div>
         </div>
       )}
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-16 right-4 z-50 w-[340px] max-w-[calc(100vw-2rem)] h-[460px] max-h-[calc(100vh-5rem)] bg-card border rounded-xl shadow-card-hover flex flex-col animate-fade-in">
+        <div className="fixed bottom-14 right-4 z-50 w-[340px] max-w-[calc(100vw-2rem)] h-[440px] max-h-[calc(100vh-5rem)] bg-card border rounded-lg shadow-card-hover flex flex-col">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b flex-shrink-0">
             <img src={miraAvatar} alt="МИРА" className="w-7 h-7 rounded-full object-cover" />
             <div className="flex-1 min-w-0">
@@ -177,14 +177,7 @@ export function AssistantMira() {
             {isLoading && messages[messages.length - 1]?.role === 'user' && (
               <div className="flex gap-2 items-start">
                 <div className="bg-muted rounded-lg px-3 py-2 text-xs text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="flex gap-0.5">
-                      <span className="w-1 h-1 bg-muted-foreground/50 rounded-full animate-pulse" />
-                      <span className="w-1 h-1 bg-muted-foreground/50 rounded-full animate-pulse [animation-delay:150ms]" />
-                      <span className="w-1 h-1 bg-muted-foreground/50 rounded-full animate-pulse [animation-delay:300ms]" />
-                    </span>
-                    МИРА думает
-                  </span>
+                  МИРА думает...
                 </div>
               </div>
             )}
@@ -199,7 +192,7 @@ export function AssistantMira() {
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Спросите МИРУ..."
-                className="flex-1 resize-none rounded-lg border bg-background px-3 py-2 text-xs min-h-[36px] max-h-[72px] focus:outline-none focus:ring-1 focus:ring-ring transition-shadow duration-150"
+                className="flex-1 resize-none rounded-md border bg-background px-3 py-2 text-xs min-h-[36px] max-h-[72px] focus:outline-none focus:ring-1 focus:ring-ring transition-colors duration-150"
                 rows={1}
               />
               <Button size="icon" onClick={sendMessage} disabled={!input.trim() || isLoading} className="h-9 w-9 flex-shrink-0">
@@ -213,7 +206,7 @@ export function AssistantMira() {
       {/* FAB button */}
       <button
         onClick={() => { setOpen(!open); setShowOnboarding(false); }}
-        className="fixed bottom-4 right-4 z-50 w-10 h-10 rounded-full bg-primary text-primary-foreground shadow-card-hover hover:shadow-lg transition-all duration-150 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        className="fixed bottom-4 right-4 z-50 w-10 h-10 rounded-full bg-primary text-primary-foreground shadow-card-hover hover:shadow-lg transition-shadow duration-150 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
       >
         {open ? <X size={16} /> : <MessageCircle size={16} />}
       </button>

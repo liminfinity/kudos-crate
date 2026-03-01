@@ -6,56 +6,56 @@
 
 @layer base {
   :root {
-    --background: 220 14% 96%;
-    --foreground: 220 20% 16%;
+    --background: 220 16% 96%;
+    --foreground: 222 24% 17%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 16%;
+    --card-foreground: 222 24% 17%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 16%;
+    --popover-foreground: 222 24% 17%;
 
-    --primary: 222 35% 20%;
+    --primary: 222 40% 20%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 14% 93%;
-    --secondary-foreground: 220 20% 16%;
+    --secondary-foreground: 222 24% 17%;
 
     --muted: 220 14% 93%;
     --muted-foreground: 220 9% 46%;
 
-    --accent: 160 60% 30%;
+    --accent: 160 50% 30%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 4 55% 44%;
+    --destructive: 4 50% 44%;
     --destructive-foreground: 0 0% 100%;
 
-    --positive: 160 60% 30%;
+    --positive: 160 50% 30%;
     --positive-foreground: 0 0% 100%;
 
-    --negative: 4 55% 44%;
+    --negative: 4 50% 44%;
     --negative-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 222 35% 20%;
+    --border: 220 13% 90%;
+    --input: 220 13% 90%;
+    --ring: 222 40% 20%;
 
-    --radius: 0.75rem;
+    --radius: 0.625rem;
 
-    --sidebar-background: 222 35% 13%;
+    --sidebar-background: 222 36% 13%;
     --sidebar-foreground: 220 14% 90%;
-    --sidebar-primary: 160 50% 45%;
+    --sidebar-primary: 160 45% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 222 30% 18%;
     --sidebar-accent-foreground: 220 14% 90%;
     --sidebar-border: 222 25% 20%;
-    --sidebar-ring: 160 50% 45%;
+    --sidebar-ring: 160 45% 42%;
 
-    --chart-positive: 160 60% 30%;
-    --chart-negative: 4 55% 44%;
-    --chart-1: 222 35% 20%;
-    --chart-2: 160 60% 30%;
-    --chart-3: 4 55% 44%;
+    --chart-positive: 160 50% 30%;
+    --chart-negative: 4 50% 44%;
+    --chart-1: 222 40% 20%;
+    --chart-2: 160 50% 30%;
+    --chart-3: 4 50% 44%;
     --chart-4: 35 45% 48%;
     --chart-5: 260 25% 50%;
   }
@@ -106,6 +106,6 @@
 
 @layer utilities {
   .transition-base {
-    @apply transition-all duration-150 ease-out;
+    @apply transition-colors duration-150 ease-out;
   }
 }

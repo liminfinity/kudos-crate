@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -45,7 +44,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-sm animate-fade-in">
+      <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold tracking-widest text-foreground">
             М<span className="relative">И<span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent" /></span>РА
@@ -57,7 +56,7 @@ export default function Login() {
           <CardContent className="pt-5">
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-destructive/8 text-destructive text-xs">
+                <div className="flex items-center gap-2 p-2.5 rounded-md bg-destructive/8 text-destructive text-xs">
                   <AlertCircle size={14} />
                   {error}
                 </div>
