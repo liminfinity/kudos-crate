@@ -106,6 +106,45 @@ export type Database = {
           },
         ]
       }
+      feedback_180: {
+        Row: {
+          collaboration_score: number | null
+          created_at: string
+          from_user_id: string
+          id: string
+          period: string
+          strengths: string[]
+          text_long: string
+          to_user_id: string
+          updated_at: string
+          weaknesses: string[]
+        }
+        Insert: {
+          collaboration_score?: number | null
+          created_at?: string
+          from_user_id: string
+          id?: string
+          period: string
+          strengths?: string[]
+          text_long: string
+          to_user_id: string
+          updated_at?: string
+          weaknesses?: string[]
+        }
+        Update: {
+          collaboration_score?: number | null
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          period?: string
+          strengths?: string[]
+          text_long?: string
+          to_user_id?: string
+          updated_at?: string
+          weaknesses?: string[]
+        }
+        Relationships: []
+      }
       feedback_subcategories: {
         Row: {
           feedback_id: string

@@ -65,13 +65,13 @@ const App = () => (
             {/* Feedback section — persistent tabs */}
             <Route element={<ProtectedRoute><FeedbackSectionLayout /></ProtectedRoute>}>
               <Route path="/feedback/new" element={<FeedbackForm />} />
-              <Route path="/feedback-180" element={<Feedback180Form />} />
               <Route path="/kudos/new" element={<KudosForm />} />
             </Route>
 
             {/* Surveys section — persistent tabs */}
             <Route element={<ProtectedRoute><SurveySectionLayout /></ProtectedRoute>}>
               <Route path="/surveys" element={<SurveyList />} />
+              <Route path="/feedback-180" element={<Feedback180Form />} />
               <Route path="/review-360/tasks" element={<Review360Tasks />} />
             </Route>
 
