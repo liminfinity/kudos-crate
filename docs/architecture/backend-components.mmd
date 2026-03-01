@@ -1,0 +1,80 @@
+%% МИРА — Backend Component Diagram (Level 3)
+%% Показывает логические модули бэкенда и их зависимости
+
+graph LR
+    subgraph auth_rbac["Auth / RBAC"]
+        AUTH_CTX["AuthContext\nJWT + Session"]
+        ROLES["user_roles\nhas_role() / is_manager_or_above()"]
+        GUARD["ProtectedRoute\nUI Guards"]
+    end
+
+    subgraph feedback_mod["Feedback Module"]
+        FB_FORM["FeedbackForm\nОтзыв по эпизоду"]
+        FB_SUB["Subcategories\nПозитив / Негатив / Критичные"]
+        FB_180["Feedback 180\nРазвернутый отзыв"]
+    end
+
+    subgraph kudos_mod["Kudos Module"]
+        KUDOS["KudosForm\n5/мес, cooldown 7 дней"]
+        KUDOS_DASH["KudosDashboard\nHelp Index"]
+    end
+
+    subgraph survey_mod["Survey Module"]
+        TMPL["SurveyTemplates\nhalf_year / bi_month"]
+        CYCLE["SurveyCycles\nОткрытие / Закрытие"]
+        ASSIGN["SurveyAssignments\nНазначения"]
+        RESP["SurveyResponses\nОтветы"]
+        DIARY["LeaderDiary\nДневник руководителя"]
+    end
+
+    subgraph review_360["Review 360 Module"]
+        R_CYCLE["360 Cycles\ndraft / published / closed"]
+        R_ASSIGN["360 Assignments\nАвтораспределение"]
+        R_RESP["360 Responses\nОтветы"]
+        R_GEN["generate-360-assignments\nАлгоритм"]
+    end
+
+    subgraph analytics_mod["Analytics Module"]
+        DASH["Dashboard\nОбзор + агрегаты"]
+        SAT["Satisfaction Index"]
+        ENG["Engagement Index"]
+        MOOD["Company Mood"]
+        HEATMAP["InteractionHeatmap"]
+        GRAPH["RelationshipGraph\nZoom + Focus"]
+        REC["Recommendations\nAI"]
+    end
+
+    subgraph embed_mod["Embed Module"]
+        EMB_SURVEY["Embed Survey"]
+        EMB_FB["Embed Feedback"]
+        EMB_KUDOS["Embed Kudos"]
+        EMB_TOP["Embed Top Kudos"]
+        EMB_CTA["Embed CTA Button"]
+        EMB_SETTINGS["EmbedSettings\nГенерация кода"]
+    end
+
+    subgraph llm_mod["LLM Layer"]
+        PROC_TEXT["process-text\nМодерация"]
+        ASSISTANT["assistant\nКонтекстная помощь"]
+        RECS_AI["recommendations\nРазвитие команды"]
+    end
+
+    subgraph admin_mod["Admin Module"]
+        ADM_USERS["AdminUsers"]
+        ADM_TEAMS["AdminTeams"]
+        ADM_EP["AdminEpisodes"]
+        ADM_SUBCAT["Subcategories CRUD"]
+    end
+
+    AUTH_CTX --> GUARD
+    GUARD --> feedback_mod
+    GUARD --> kudos_mod
+    GUARD --> survey_mod
+    GUARD --> review_360
+    GUARD --> analytics_mod
+    GUARD --> admin_mod
+
+    feedback_mod --> PROC_TEXT
+    analytics_mod --> RECS_AI
+    review_360 --> R_GEN
+    embed_mod --> EMB_SETTINGS

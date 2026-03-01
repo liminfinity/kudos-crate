@@ -1,0 +1,25 @@
+%% МИРА — C4 Context Diagram (Level 1)
+%% Показывает систему в контексте пользователей и внешних систем
+
+graph TB
+    subgraph actors["Пользователи"]
+        EMP["Employee\nСотрудник"]
+        MGR["Manager\nРуководитель"]
+        HR["HR\nHR-специалист"]
+        ADM["Admin\nАдминистратор"]
+    end
+
+    MIRA["МИРА\nПлатформа обратной связи\nи развития команд"]
+
+    EXT_SITE["Внешний сайт\nс embed-виджетами"]
+    LLM["AI Gateway\nLovable AI / Gemini"]
+    CRON["Планировщик\nsurvey-cron"]
+
+    EMP -->|"Отзывы, Kudos,\nОпросы, 360"| MIRA
+    MGR -->|"Аналитика, Дневник,\nОтзывы, 360"| MIRA
+    HR -->|"Аналитика,\nРекомендации"| MIRA
+    ADM -->|"Управление,\nНастройки"| MIRA
+
+    EXT_SITE -->|"iframe embed\nОпросы, Kudos, CTA"| MIRA
+    MIRA -->|"Модерация,\nРекомендации"| LLM
+    CRON -->|"Автоматическое\nсоздание опросов"| MIRA
