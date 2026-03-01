@@ -206,7 +206,7 @@ export default function SurveyAnalytics() {
         {/* Filters */}
         <Card>
           <CardContent className="pt-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs text-muted-foreground">Цикл</Label>
                 <Select value={selectedCycle} onValueChange={setSelectedCycle}>
@@ -231,7 +231,7 @@ export default function SurveyAnalytics() {
         </Card>
 
         {/* KPIs */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card><CardContent className="pt-5">
             <div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-primary/10"><Users size={18} className="text-primary" /></div>
               <div><p className="text-2xl font-bold">{totalAssigned}</p><p className="text-xs text-muted-foreground">Назначено</p></div>
@@ -349,6 +349,7 @@ export default function SurveyAnalytics() {
           <Card>
             <CardHeader><CardTitle className="text-base">Ответы (сырые данные)</CardTitle></CardHeader>
             <CardContent>
+              <div className="overflow-x-auto -mx-6 px-6">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -376,6 +377,7 @@ export default function SurveyAnalytics() {
                   })}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         )}

@@ -139,7 +139,7 @@ export default function KudosDashboard() {
         {/* Filters */}
         <Card>
           <CardContent className="pt-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs text-muted-foreground">Период</Label>
                 <Select value={period} onValueChange={v => setPeriod(v as PeriodPreset)}>
@@ -166,7 +166,7 @@ export default function KudosDashboard() {
         </Card>
 
         {/* KPI */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-positive/10"><Heart size={18} className="text-positive" /></div><div><p className="text-2xl font-bold">{filtered.length}</p><p className="text-xs text-muted-foreground">Kudos за период</p></div></div></CardContent></Card>
           <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-primary/10"><Award size={18} className="text-primary" /></div><div><p className="text-2xl font-bold">{topReceivers[0]?.name || '—'}</p><p className="text-xs text-muted-foreground">Лидер по kudos</p></div></div></CardContent></Card>
           <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-primary/10"><TrendingUp size={18} className="text-primary" /></div><div><p className="text-2xl font-bold">{avgKudos.toFixed(1)}</p><p className="text-xs text-muted-foreground">Среднее на сотрудника</p></div></div></CardContent></Card>
@@ -231,6 +231,7 @@ export default function KudosDashboard() {
         <Card>
           <CardHeader><CardTitle className="text-base">Топ получателей kudos + Help Index</CardTitle></CardHeader>
           <CardContent>
+            <div className="overflow-x-auto -mx-6 px-6">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -257,6 +258,7 @@ export default function KudosDashboard() {
                 {topWithIndex.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Нет данных</TableCell></TableRow>}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
