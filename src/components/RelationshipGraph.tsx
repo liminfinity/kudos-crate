@@ -2,9 +2,9 @@ import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { ZoomIn, ZoomOut, Maximize, RotateCcw, X } from 'lucide-react';
 import type { Profile } from '@/lib/supabase-types';
 
 interface FeedbackEdge {
@@ -53,6 +53,9 @@ interface NodeStats {
   total: number;
 }
 
+const W = 600, H = 400;
+const MIN_ZOOM = 0.3, MAX_ZOOM = 3.0;
+
 export function RelationshipGraph({ profiles, feedbackEdges, teams = [] }: Props) {
   const [sentimentFilter, setSentimentFilter] = useState('all');
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
@@ -62,6 +65,15 @@ export function RelationshipGraph({ profiles, feedbackEdges, teams = [] }: Props
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [nodes, setNodes] = useState<Node[]>([]);
   const animRef = useRef<number>();
+
+  // Zoom & Pan state
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const isPanning = useRef(false);
+  const panStart = useRef({ x: 0, y: 0, px: 0, py: 0 });
+
+  // Focus state
+  const [focusedNode, setFocusedNode] = useState<string | null>(null);
 
   const hasTeamFilter = selectedTeams.length > 0;
 
@@ -131,7 +143,6 @@ export function RelationshipGraph({ profiles, feedbackEdges, teams = [] }: Props
     return m;
   }, [profiles]);
 
-  // Team color map
   const teamColorMap = useMemo(() => {
     const colors = [
       'hsl(215, 55%, 32%)', 'hsl(160, 35%, 38%)', 'hsl(4, 60%, 48%)',
@@ -142,8 +153,32 @@ export function RelationshipGraph({ profiles, feedbackEdges, teams = [] }: Props
     return m;
   }, [teams]);
 
+  // Focus: neighbors
+  const focusNeighbors = useMemo(() => {
+    if (!focusedNode) return null;
+    const neighbors = new Set<string>();
+    neighbors.add(focusedNode);
+    edges.forEach(e => {
+      if (e.source === focusedNode) neighbors.add(e.target);
+      if (e.target === focusedNode) neighbors.add(e.source);
+    });
+    return neighbors;
+  }, [focusedNode, edges]);
+
+  const focusSummary = useMemo(() => {
+    if (!focusedNode) return null;
+    let pos = 0, neg = 0, connections = 0;
+    edges.forEach(e => {
+      if (e.source === focusedNode || e.target === focusedNode) {
+        connections++;
+        pos += e.positiveCount;
+        neg += e.negativeCount;
+      }
+    });
+    return { connections, pos, neg, total: pos + neg };
+  }, [focusedNode, edges]);
+
   useEffect(() => {
-    const W = 600, H = 400;
     const arr = Array.from(involvedIds).map((id, i) => {
       const angle = (2 * Math.PI * i) / involvedIds.size;
       const r = Math.min(W, H) * 0.35;
@@ -155,7 +190,6 @@ export function RelationshipGraph({ profiles, feedbackEdges, teams = [] }: Props
 
   useEffect(() => {
     if (nodes.length === 0) return;
-    const W = 600, H = 400;
     let running = true;
     let iter = 0;
     const maxIter = 150;
@@ -189,7 +223,6 @@ export function RelationshipGraph({ profiles, feedbackEdges, teams = [] }: Props
           a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
         });
 
-        // Team clustering force
         if (hasTeamFilter && selectedTeams.length > 1) {
           const teamCenters: Record<string, { x: number; y: number; count: number }> = {};
           next.forEach(n => {
@@ -231,6 +264,47 @@ export function RelationshipGraph({ profiles, feedbackEdges, teams = [] }: Props
     return m;
   }, [nodes]);
 
+  // Zoom handlers
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    setZoom(z => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z * delta)));
+  }, []);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    // Only pan if not clicking a node
+    const target = e.target as SVGElement;
+    if (target.closest('.graph-node')) return;
+    isPanning.current = true;
+    panStart.current = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y };
+  }, [pan]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isPanning.current) return;
+    setPan({
+      x: panStart.current.px + (e.clientX - panStart.current.x),
+      y: panStart.current.py + (e.clientY - panStart.current.y),
+    });
+  }, []);
+
+  const handleMouseUp = useCallback(() => { isPanning.current = false; }, []);
+
+  const resetView = useCallback(() => { setZoom(1); setPan({ x: 0, y: 0 }); }, []);
+
+  const fitToScreen = useCallback(() => {
+    if (nodes.length === 0) return;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    nodes.forEach(n => {
+      minX = Math.min(minX, n.x); maxX = Math.max(maxX, n.x);
+      minY = Math.min(minY, n.y); maxY = Math.max(maxY, n.y);
+    });
+    const pw = maxX - minX + 80, ph = maxY - minY + 80;
+    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.min(W / pw, H / ph)));
+    setZoom(newZoom);
+    setPan({ x: 0, y: 0 });
+  }, [nodes]);
+
   const handleEdgeHover = useCallback((e: React.MouseEvent, edge: Edge) => {
     setHoveredEdge(edge); setHoveredNode(null);
     setTooltipPos({ x: e.clientX, y: e.clientY });
@@ -239,6 +313,10 @@ export function RelationshipGraph({ profiles, feedbackEdges, teams = [] }: Props
   const handleNodeHover = useCallback((e: React.MouseEvent, nodeId: string) => {
     setHoveredNode(nodeId); setHoveredEdge(null);
     setTooltipPos({ x: e.clientX, y: e.clientY });
+  }, []);
+
+  const handleNodeClick = useCallback((nodeId: string) => {
+    setFocusedNode(prev => prev === nodeId ? null : nodeId);
   }, []);
 
   const edgeColor = (e: Edge) => {
@@ -269,6 +347,20 @@ export function RelationshipGraph({ profiles, feedbackEdges, teams = [] }: Props
     );
   }
 
+  // Visibility helpers for focus mode
+  const isEdgeVisible = (e: Edge) => {
+    if (!focusNeighbors) return true;
+    return e.source === focusedNode || e.target === focusedNode;
+  };
+
+  const isNodeVisible = (id: string) => {
+    if (!focusNeighbors) return true;
+    return focusNeighbors.has(id);
+  };
+
+  const transform = `translate(${pan.x}, ${pan.y}) scale(${zoom})`;
+  const transformOrigin = `${W / 2}px ${H / 2}px`;
+
   return (
     <Card>
       <CardHeader>
@@ -286,75 +378,127 @@ export function RelationshipGraph({ profiles, feedbackEdges, teams = [] }: Props
             </Select>
           </div>
         </div>
-        {/* Team multi-select */}
         {teams.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
             <Label className="text-xs text-muted-foreground self-center">Команды:</Label>
             {teams.map(t => (
-              <button
-                key={t.id}
-                onClick={() => toggleTeam(t.id)}
-                className={cn(
-                  "px-2.5 py-1 rounded-full text-xs border transition-all",
-                  selectedTeams.includes(t.id)
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "border-border hover:bg-muted text-muted-foreground"
-                )}
-              >
+              <button key={t.id} onClick={() => toggleTeam(t.id)}
+                className={cn("px-2.5 py-1 rounded-full text-xs border transition-all",
+                  selectedTeams.includes(t.id) ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted text-muted-foreground"
+                )}>
                 {t.name}
               </button>
             ))}
             {selectedTeams.length > 0 && (
-              <button onClick={() => setSelectedTeams([])} className="text-[10px] text-accent hover:underline self-center ml-1">
-                Сбросить
-              </button>
+              <button onClick={() => setSelectedTeams([])} className="text-[10px] text-accent hover:underline self-center ml-1">Сбросить</button>
             )}
           </div>
         )}
-        <div className="flex gap-4 text-xs text-muted-foreground mt-1">
+        <div className="flex gap-4 text-xs text-muted-foreground mt-1 flex-wrap">
           <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full" style={{ background: 'hsl(152, 56%, 40%)' }} /> Позитивный</span>
           <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full" style={{ background: 'hsl(4, 76%, 56%)' }} /> Негативный</span>
           <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full" style={{ background: 'hsl(280, 60%, 55%)' }} /> Смешанный</span>
           {hasTeamFilter && <span className="flex items-center gap-1">--- Внешние связи</span>}
+          {focusedNode && <span className="text-primary font-medium">🔍 Фокус: {profileMap[focusedNode]?.full_name}</span>}
         </div>
       </CardHeader>
       <CardContent className="relative">
-        <svg ref={svgRef} viewBox="0 0 600 400" className="w-full h-auto border rounded-lg bg-muted/20" style={{ maxHeight: 400 }}>
-          {edges.map((e, i) => {
-            const a = nodeMap[e.source], b = nodeMap[e.target];
-            if (!a || !b) return null;
-            return (
-              <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-                stroke={edgeColor(e)} strokeWidth={edgeWidth(e)}
-                strokeOpacity={hoveredEdge === e ? 1 : e.isExternal ? 0.3 : 0.6}
-                strokeDasharray={e.isExternal ? '4 4' : undefined}
-                className="cursor-pointer"
-                onMouseMove={ev => handleEdgeHover(ev, e)}
-                onMouseLeave={() => setHoveredEdge(null)}
-              />
-            );
-          })}
-          {nodes.map(n => {
-            const isExternal = hasTeamFilter && filteredProfileIds && !filteredProfileIds.has(n.id);
-            return (
-              <g key={n.id}
-                onMouseMove={ev => handleNodeHover(ev, n.id)}
-                onMouseLeave={() => setHoveredNode(null)}
-                className="cursor-pointer"
-                opacity={isExternal ? 0.5 : 1}
-              >
-                <circle cx={n.x} cy={n.y} r={isExternal ? 14 : 18} fill={nodeColor(n.id)} stroke="hsl(var(--background))" strokeWidth={2} opacity={0.9}
-                  strokeDasharray={isExternal ? '3 3' : undefined} />
-                <text x={n.x} y={n.y + 30} textAnchor="middle" fontSize={9} fill="hsl(var(--foreground))" className="pointer-events-none select-none">
-                  {n.label.length > 14 ? n.label.slice(0, 12) + '…' : n.label}
-                </text>
-                <text x={n.x} y={n.y + 4} textAnchor="middle" fontSize={8} fill="white" className="pointer-events-none select-none font-medium">
-                  {n.label.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-                </text>
-              </g>
-            );
-          })}
+        {/* Zoom/Pan controls */}
+        <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
+          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setZoom(z => Math.min(MAX_ZOOM, z * 1.3))} title="Приблизить">
+            <ZoomIn size={14} />
+          </Button>
+          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setZoom(z => Math.max(MIN_ZOOM, z * 0.7))} title="Отдалить">
+            <ZoomOut size={14} />
+          </Button>
+          <Button variant="outline" size="icon" className="h-7 w-7" onClick={fitToScreen} title="Вписать">
+            <Maximize size={14} />
+          </Button>
+          <Button variant="outline" size="icon" className="h-7 w-7" onClick={resetView} title="Сброс">
+            <RotateCcw size={14} />
+          </Button>
+          {focusedNode && (
+            <Button variant="outline" size="icon" className="h-7 w-7 border-primary text-primary" onClick={() => setFocusedNode(null)} title="Сбросить фокус">
+              <X size={14} />
+            </Button>
+          )}
+        </div>
+
+        {/* Zoom level indicator */}
+        <div className="absolute bottom-2 left-2 z-10 text-[10px] text-muted-foreground bg-background/80 rounded px-1.5 py-0.5">
+          {Math.round(zoom * 100)}%
+        </div>
+
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${W} ${H}`}
+          className="w-full h-auto border rounded-lg bg-muted/20 select-none"
+          style={{ maxHeight: 500, cursor: isPanning.current ? 'grabbing' : 'grab' }}
+          onWheel={handleWheel}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        >
+          <g transform={transform} style={{ transformOrigin }}>
+            {edges.map((e, i) => {
+              const a = nodeMap[e.source], b = nodeMap[e.target];
+              if (!a || !b) return null;
+              const visible = isEdgeVisible(e);
+              return (
+                <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+                  stroke={edgeColor(e)} strokeWidth={edgeWidth(e)}
+                  strokeOpacity={!visible ? 0.06 : hoveredEdge === e ? 1 : e.isExternal ? 0.3 : 0.6}
+                  strokeDasharray={e.isExternal ? '4 4' : undefined}
+                  className="cursor-pointer"
+                  style={{ transition: 'stroke-opacity 0.2s' }}
+                  onMouseMove={visible ? ev => handleEdgeHover(ev, e) : undefined}
+                  onMouseLeave={() => setHoveredEdge(null)}
+                />
+              );
+            })}
+            {nodes.map(n => {
+              const isExternal = hasTeamFilter && filteredProfileIds && !filteredProfileIds.has(n.id);
+              const visible = isNodeVisible(n.id);
+              const isFocused = focusedNode === n.id;
+              return (
+                <g key={n.id}
+                  className="graph-node cursor-pointer"
+                  onMouseMove={visible ? ev => handleNodeHover(ev, n.id) : undefined}
+                  onMouseLeave={() => setHoveredNode(null)}
+                  onClick={() => handleNodeClick(n.id)}
+                  opacity={!visible ? 0.08 : isExternal ? 0.5 : 1}
+                  style={{ transition: 'opacity 0.2s' }}
+                >
+                  <circle cx={n.x} cy={n.y} r={isExternal ? 14 : 18} fill={nodeColor(n.id)} stroke={isFocused ? 'hsl(var(--primary))' : 'hsl(var(--background))'} strokeWidth={isFocused ? 3 : 2} opacity={0.9}
+                    strokeDasharray={isExternal ? '3 3' : undefined} />
+                  <text x={n.x} y={n.y + 30} textAnchor="middle" fontSize={9} fill="hsl(var(--foreground))" className="pointer-events-none select-none">
+                    {n.label.length > 14 ? n.label.slice(0, 12) + '…' : n.label}
+                  </text>
+                  <text x={n.x} y={n.y + 4} textAnchor="middle" fontSize={8} fill="white" className="pointer-events-none select-none font-medium">
+                    {n.label.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
         </svg>
+
+        {/* Focus summary panel */}
+        {focusedNode && focusSummary && (
+          <div className="mt-3 p-3 rounded-lg border bg-muted/30 text-sm">
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-medium">{profileMap[focusedNode]?.full_name}</span>
+              <button onClick={() => setFocusedNode(null)} className="text-xs text-muted-foreground hover:text-foreground">Сбросить фокус</button>
+            </div>
+            <div className="flex gap-4 text-xs">
+              <span>Связей: <strong>{focusSummary.connections}</strong></span>
+              <span style={{ color: 'hsl(152, 56%, 40%)' }}>Позитивных: <strong>{focusSummary.pos}</strong></span>
+              <span style={{ color: 'hsl(4, 76%, 56%)' }}>Негативных: <strong>{focusSummary.neg}</strong></span>
+              <span>Всего: <strong>{focusSummary.total}</strong></span>
+            </div>
+          </div>
+        )}
 
         {hoveredEdge && (
           <div className="fixed z-50 bg-popover text-popover-foreground border rounded-lg shadow-lg px-3 py-2 text-xs pointer-events-none"
@@ -378,6 +522,7 @@ export function RelationshipGraph({ profiles, feedbackEdges, teams = [] }: Props
             <p style={{ color: 'hsl(152, 56%, 40%)' }}>Позитивных: {nodeStats[hoveredNode].positive}</p>
             <p style={{ color: 'hsl(4, 76%, 56%)' }}>Негативных: {nodeStats[hoveredNode].negative}</p>
             <p>Всего: {nodeStats[hoveredNode].total}</p>
+            <p className="text-muted-foreground mt-1">Клик — фокус на связях</p>
           </div>
         )}
       </CardContent>
