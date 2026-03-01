@@ -12,10 +12,10 @@ const ONBOARDING_KEY = 'mira_onboarding_shown';
 const CHAT_STATE_KEY = 'mira_chat_open';
 
 const WELCOME_MESSAGES: Record<string, string> = {
-  employee: '👋 Привет! Я Мира — ваш цифровой ассистент в Опроснице. Я помогу разобраться с обратной связью, Kudos и опросами. Спрашивайте!',
-  manager: '👋 Привет! Я Мира — ваш ассистент в Опроснице. Помогу с аналитикой команды, дашбордами и дневником руководителя.',
-  hr: '👋 Привет! Я Мира. Помогу с аналитикой, инцидентами и интерпретацией данных платформы.',
-  admin: '👋 Привет! Я Мира. Помогу с любыми вопросами по платформе Опросница.',
+  employee: 'Привет! Я МИРА — ваш цифровой ассистент. Помогу разобраться с обратной связью, благодарностями и опросами. Спрашивайте.',
+  manager: 'Привет! Я МИРА — ваш ассистент. Помогу с аналитикой команды и дневником руководителя.',
+  hr: 'Привет! Я МИРА. Помогу с аналитикой, сигналами и интерпретацией данных.',
+  admin: 'Привет! Я МИРА. Помогу с любыми вопросами по платформе.',
 };
 
 export function AssistantMira() {
@@ -29,7 +29,6 @@ export function AssistantMira() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Show onboarding on first visit
   useEffect(() => {
     if (!localStorage.getItem(ONBOARDING_KEY) && role) {
       setShowOnboarding(true);
@@ -37,15 +36,9 @@ export function AssistantMira() {
     }
   }, [role]);
 
-  useEffect(() => {
-    localStorage.setItem(CHAT_STATE_KEY, String(open));
-  }, [open]);
+  useEffect(() => { localStorage.setItem(CHAT_STATE_KEY, String(open)); }, [open]);
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // Initialize with welcome message
   useEffect(() => {
     if (messages.length === 0 && role) {
       setMessages([{ role: 'assistant', content: WELCOME_MESSAGES[role] || WELCOME_MESSAGES.employee }]);
@@ -150,10 +143,10 @@ export function AssistantMira() {
               <X size={14} />
             </button>
             <div className="flex items-start gap-3">
-              <img src={miraAvatar} alt="Мира" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+              <img src={miraAvatar} alt="МИРА" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium">Привет! Я Мира 👋</p>
-                <p className="text-xs text-muted-foreground mt-1">Ваш ассистент в Опроснице. Нажмите на меня, чтобы задать вопрос!</p>
+                <p className="text-sm font-medium">Привет! Я МИРА</p>
+                <p className="text-xs text-muted-foreground mt-1">Ваш ассистент на платформе. Нажмите, чтобы задать вопрос.</p>
               </div>
             </div>
           </div>
@@ -163,24 +156,22 @@ export function AssistantMira() {
       {/* Chat panel */}
       {open && (
         <div className="fixed bottom-20 right-4 z-50 w-[360px] max-w-[calc(100vw-2rem)] h-[500px] max-h-[calc(100vh-6rem)] bg-card border border-border rounded-xl shadow-2xl flex flex-col animate-fade-in">
-          {/* Header */}
           <div className="flex items-center gap-3 p-4 border-b border-border flex-shrink-0">
-            <img src={miraAvatar} alt="Мира" className="w-9 h-9 rounded-full object-cover" />
+            <img src={miraAvatar} alt="МИРА" className="w-9 h-9 rounded-full object-cover" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold">Мира</p>
-              <p className="text-xs text-muted-foreground">AI-ассистент Опросницы</p>
+              <p className="text-sm font-semibold">МИРА</p>
+              <p className="text-xs text-muted-foreground">Цифровой ассистент</p>
             </div>
             <Button variant="ghost" size="icon" onClick={() => setOpen(false)} className="h-8 w-8">
               <X size={16} />
             </Button>
           </div>
 
-          {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map((msg, i) => (
               <div key={i} className={cn('flex gap-2', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
                 {msg.role === 'assistant' && (
-                  <img src={miraAvatar} alt="Мира" className="w-7 h-7 rounded-full object-cover flex-shrink-0 mt-0.5" />
+                  <img src={miraAvatar} alt="МИРА" className="w-7 h-7 rounded-full object-cover flex-shrink-0 mt-0.5" />
                 )}
                 <div className={cn(
                   'max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap',
@@ -194,11 +185,11 @@ export function AssistantMira() {
             ))}
             {isLoading && messages[messages.length - 1]?.role === 'user' && (
               <div className="flex gap-2 items-start">
-                <img src={miraAvatar} alt="Мира" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                <img src={miraAvatar} alt="МИРА" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
                 <div className="bg-muted rounded-lg px-3 py-2 text-sm text-muted-foreground">
                   <span className="inline-flex items-center gap-1">
                     <Sparkles size={14} className="animate-pulse" />
-                    Мира думает...
+                    МИРА думает...
                   </span>
                 </div>
               </div>
@@ -206,7 +197,6 @@ export function AssistantMira() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
           <div className="p-3 border-t border-border flex-shrink-0">
             <div className="flex gap-2">
               <textarea
@@ -214,7 +204,7 @@ export function AssistantMira() {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Спросите Миру..."
+                placeholder="Спросите МИРУ..."
                 className="flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm min-h-[40px] max-h-[80px] focus:outline-none focus:ring-2 focus:ring-ring"
                 rows={1}
               />
@@ -229,9 +219,9 @@ export function AssistantMira() {
       {/* FAB button */}
       <button
         onClick={() => { setOpen(!open); setShowOnboarding(false); }}
-        className="fixed bottom-4 right-4 z-50 w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 overflow-hidden border-2 border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        className="fixed bottom-4 right-4 z-50 w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 overflow-hidden border-2 border-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
       >
-        <img src={miraAvatar} alt="Мира — AI ассистент" className="w-full h-full object-cover" />
+        <img src={miraAvatar} alt="МИРА — цифровой ассистент" className="w-full h-full object-cover" />
       </button>
     </>
   );

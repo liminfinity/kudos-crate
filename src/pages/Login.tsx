@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MessageSquare, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -27,11 +28,8 @@ export default function Login() {
       setError('Неверный email или пароль');
       return;
     }
-
-    // Redirect will happen after auth state updates
   };
 
-  // If already logged in, redirect
   const { user } = useAuth();
   if (user && role) {
     const dest = role === 'employee' ? '/feedback/new' : '/dashboard';
@@ -48,12 +46,11 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md animate-fade-in">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary mb-4">
-            <MessageSquare size={28} className="text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold">Опросница</h1>
-          <p className="text-muted-foreground mt-1">Платформа корпоративной обратной связи и аналитики команд</p>
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold tracking-wide">
+            М<span className="relative">И<span className="absolute -top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-accent" /></span>РА
+          </h1>
+          <p className="text-muted-foreground mt-2 text-sm">Платформа корпоративной обратной связи и развития команд</p>
         </div>
 
         <Card>

@@ -143,8 +143,8 @@ export default function CriticalIncidents() {
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-destructive/10"><AlertTriangle size={20} className="text-destructive" /></div>
             <div>
-              <h1 className="text-2xl font-bold">Critical Incidents</h1>
-              <p className="text-muted-foreground">Серьёзные нарушения (только HR/Admin)</p>
+              <h1 className="text-2xl font-bold">Серьёзные сигналы</h1>
+              <p className="text-muted-foreground">Отслеживание значимых инцидентов (HR/Admin)</p>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1"><Download size={14} /> Экспорт CSV</Button>

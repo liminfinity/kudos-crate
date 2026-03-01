@@ -140,7 +140,7 @@ export default function CompanyMood() {
     <AppLayout>
       <div className="space-y-6 animate-fade-in">
         <div>
-          <h1 className="text-2xl font-bold">Company Mood Index</h1>
+          <h1 className="text-2xl font-bold">Состояние атмосферы</h1>
           <p className="text-muted-foreground">Общее эмоциональное состояние компании</p>
         </div>
 
