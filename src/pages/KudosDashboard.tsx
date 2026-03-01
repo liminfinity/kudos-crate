@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { Heart, Award, TrendingUp } from 'lucide-react';
+import { Heart, Award, TrendingUp, Info } from 'lucide-react';
 import { format, parseISO, subMonths } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { Profile, Team } from '@/lib/supabase-types';
@@ -126,12 +126,21 @@ export default function KudosDashboard() {
   }, [filtered, profileMap, teams]);
 
   return (
-      <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
         <div className="flex items-center gap-3">
           <Heart size={24} className="text-positive" />
           <div>
             <h1 className="text-2xl font-bold">Благодарности</h1>
             <p className="text-muted-foreground">Аналитика признания и взаимопомощи в команде</p>
+          </div>
+        </div>
+
+        {/* Kudos explanation */}
+        <div className="flex items-start gap-3 p-4 rounded-lg border border-border bg-muted/30">
+          <Info size={18} className="text-primary flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-muted-foreground">
+            <p className="font-medium text-foreground mb-1">Что такое Kudos?</p>
+            <p>Kudos — это короткая благодарность коллеге за помощь, поддержку или вклад в работу. Используйте kudos, чтобы отмечать позитивные действия и усиливать культуру взаимопомощи. Лимит: 5 kudos в месяц, не чаще 1 раза в 7 дней одному получателю.</p>
           </div>
         </div>
 

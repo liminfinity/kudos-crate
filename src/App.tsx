@@ -31,6 +31,7 @@ import EmbedSurvey from "./pages/EmbedSurvey";
 import EmbedFeedback from "./pages/EmbedFeedback";
 import EmbedKudos from "./pages/EmbedKudos";
 import EmbedSettings from "./pages/EmbedSettings";
+import EmbedTopKudos from "./pages/EmbedTopKudos";
 import Feedback180Form from "./pages/Feedback180Form";
 import Feedback180Analytics from "./pages/Feedback180Analytics";
 import Review360Cycles from "./pages/Review360Cycles";
@@ -116,6 +117,7 @@ const App = () => (
             <Route path="/embed/survey/:cycleId" element={<EmbedSurvey />} />
             <Route path="/embed/feedback" element={<EmbedFeedback />} />
             <Route path="/embed/kudos" element={<EmbedKudos />} />
+            <Route path="/embed/top-kudos" element={<EmbedTopKudos />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

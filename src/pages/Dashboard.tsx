@@ -17,6 +17,7 @@ import type { Profile, Team } from '@/lib/supabase-types';
 import { MiraHint } from '@/components/MiraHint';
 import { RelationshipGraph } from '@/components/RelationshipGraph';
 import { InteractionHeatmap } from '@/components/InteractionHeatmap';
+import { RecipientsAggregateTable } from '@/components/RecipientsAggregateTable';
 
 import { EmployeeBarChart } from '@/components/EmployeeBarChart';
 import { SentimentTimeline } from '@/components/SentimentTimeline';
@@ -259,7 +260,7 @@ export default function Dashboard() {
         <SentimentTimeline data={filtered} granularity={timeGranularity} />
 
         {/* Employee Bar Chart */}
-        <EmployeeBarChart profiles={profiles} feedbackEdges={graphEdges} />
+        <EmployeeBarChart profiles={profiles} feedbackEdges={graphEdges} teams={teams} />
 
         {/* Top subcategories */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -298,36 +299,7 @@ export default function Dashboard() {
         </div>
 
         {/* Recipients table */}
-        <Card>
-          <CardHeader><CardTitle className="text-base">Получатели (агрегат)</CardTitle></CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto -mx-6 px-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Сотрудник</TableHead>
-                  <TableHead className="text-center">Всего</TableHead>
-                  <TableHead className="text-center">Позитивных</TableHead>
-                  <TableHead className="text-center">Негативных</TableHead>
-                  <TableHead>Топ подкатегории</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recipientsTable.map(r => (
-                  <TableRow key={r.userId}>
-                    <TableCell className="font-medium">{r.name}</TableCell>
-                    <TableCell className="text-center">{r.total}</TableCell>
-                    <TableCell className="text-center text-positive font-medium">{r.positive}</TableCell>
-                    <TableCell className="text-center text-negative font-medium">{r.negative}</TableCell>
-                    <TableCell><div className="flex gap-1 flex-wrap">{r.topSubcats.map(s => <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>)}</div></TableCell>
-                  </TableRow>
-                ))}
-                {recipientsTable.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Нет данных</TableCell></TableRow>}
-              </TableBody>
-            </Table>
-            </div>
-          </CardContent>
-        </Card>
+        <RecipientsAggregateTable recipientsTable={recipientsTable} profileMap={profileMap} teams={teams} />
 
         {/* Comments */}
         <Card>
