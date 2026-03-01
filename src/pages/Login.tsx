@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -45,29 +45,25 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md animate-fade-in">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold tracking-wide">
-            М<span className="relative">И<span className="absolute -top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-accent" /></span>РА
+      <div className="w-full max-w-sm animate-fade-in">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold tracking-widest text-foreground">
+            М<span className="relative">И<span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent" /></span>РА
           </h1>
-          <p className="text-muted-foreground mt-2 text-sm">Платформа корпоративной обратной связи и развития команд</p>
+          <p className="text-muted-foreground mt-1.5 text-xs">Платформа обратной связи и развития команд</p>
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Вход в систему</CardTitle>
-            <CardDescription>Введите данные вашего аккаунта</CardDescription>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-5">
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-                  <AlertCircle size={16} />
+                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-destructive/8 text-destructive text-xs">
+                  <AlertCircle size={14} />
                   {error}
                 </div>
               )}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-xs">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -75,35 +71,37 @@ export default function Login() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
+                  className="h-9 text-sm"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Пароль</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="text-xs">Пароль</Label>
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
+                  className="h-9 text-sm"
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full h-9 text-sm" disabled={loading}>
                 {loading ? 'Вход...' : 'Войти'}
               </Button>
             </form>
 
-            <div className="mt-6 pt-6 border-t">
-              <p className="text-xs text-muted-foreground mb-3 font-medium">Демо-аккаунты:</p>
-              <div className="space-y-1.5">
+            <div className="mt-5 pt-4 border-t">
+              <p className="text-[10px] text-muted-foreground mb-2 font-medium uppercase tracking-wider">Демо-аккаунты</p>
+              <div className="space-y-0.5">
                 {demoAccounts.map(acc => (
                   <button
                     key={acc.email}
                     type="button"
                     onClick={() => { setEmail(acc.email); setPassword(acc.password); }}
-                    className="w-full text-left px-3 py-2 rounded-md text-xs hover:bg-muted transition-colors flex justify-between"
+                    className="w-full text-left px-2.5 py-1.5 rounded-md text-xs hover:bg-muted transition-colors duration-150 flex justify-between items-center"
                   >
                     <span className="text-muted-foreground">{acc.email}</span>
-                    <span className="font-medium">{acc.role}</span>
+                    <span className="font-medium text-foreground">{acc.role}</span>
                   </button>
                 ))}
               </div>

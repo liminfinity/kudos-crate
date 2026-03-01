@@ -14,7 +14,6 @@ import { cn } from '@/lib/utils';
 import type { Profile, Team } from '@/lib/supabase-types';
 import { RelationshipGraph } from '@/components/RelationshipGraph';
 import { InteractionHeatmap } from '@/components/InteractionHeatmap';
-
 import { EmployeeBarChart } from '@/components/EmployeeBarChart';
 import { SentimentTimeline } from '@/components/SentimentTimeline';
 import { subDays, subMonths, format, parseISO } from 'date-fns';
@@ -111,7 +110,6 @@ export default function Dashboard() {
 
   const timeGranularity: 'week' | 'month' = ['3m', '6m', '1y'].includes(period) ? 'month' : 'week';
 
-  // Top subcategories
   const topSubcats = useMemo(() => {
     const feedbackIds = new Set(filtered.map(f => f.id));
     const counts: Record<string, number> = {};
@@ -124,7 +122,6 @@ export default function Dashboard() {
     return { positive, negative };
   }, [filtered, feedbackSubs, subcatMap]);
 
-  // Recipients table
   const recipientsTable = useMemo(() => {
     const data: Record<string, { total: number; positive: number; negative: number; subcats: Record<string, number> }> = {};
     const feedbackIds = new Set(filtered.map(f => f.id));
@@ -179,33 +176,34 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-8 animate-fade-in">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Аналитика взаимодействий</h1>
-            <p className="text-muted-foreground">Обзор обратной связи в команде</p>
+            <h1 className="text-xl font-semibold">Аналитика взаимодействий</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Обзор обратной связи в команде</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={exportRawCSV} className="gap-1"><Download size={14} /> Сырой CSV</Button>
-            <Button variant="outline" size="sm" onClick={exportAggCSV} className="gap-1"><Download size={14} /> Агрегат CSV</Button>
+            <Button variant="outline" size="sm" onClick={exportRawCSV} className="gap-1.5 h-8 text-xs"><Download size={12} /> Сырой CSV</Button>
+            <Button variant="outline" size="sm" onClick={exportAggCSV} className="gap-1.5 h-8 text-xs"><Download size={12} /> Агрегат CSV</Button>
           </div>
         </div>
 
         {/* Filters */}
         <Card>
-          <CardContent className="pt-4">
+          <CardContent className="pt-4 pb-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               <div>
-                <Label className="text-xs text-muted-foreground">Период</Label>
+                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Период</Label>
                 <Select value={period} onValueChange={v => setPeriod(v as PeriodPreset)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>{Object.entries(periodLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Команда</Label>
+                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Команда</Label>
                 <Select value={teamFilter} onValueChange={setTeamFilter}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Все команды</SelectItem>
                     {teams.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
@@ -213,9 +211,9 @@ export default function Dashboard() {
                 </Select>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Получатель</Label>
+                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Получатель</Label>
                 <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Все</SelectItem>
                     {profiles.map(p => <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>)}
@@ -223,9 +221,9 @@ export default function Dashboard() {
                 </Select>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Тональность</Label>
+                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Тональность</Label>
                 <Select value={sentimentFilter} onValueChange={setSentimentFilter}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Все</SelectItem>
                     <SelectItem value="positive">Позитивные</SelectItem>
@@ -239,13 +237,53 @@ export default function Dashboard() {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-primary/10"><MessageSquare size={18} className="text-primary" /></div><div><p className="text-2xl font-bold">{totalCount}</p><p className="text-xs text-muted-foreground">Всего отзывов</p></div></div></CardContent></Card>
-          <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-positive/10"><TrendingUp size={18} className="text-positive" /></div><div><p className="text-2xl font-bold">{positiveCount}</p><p className="text-xs text-muted-foreground">Позитивных</p></div></div></CardContent></Card>
-          <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-negative/10"><TrendingDown size={18} className="text-negative" /></div><div><p className="text-2xl font-bold">{negativeCount}</p><p className="text-xs text-muted-foreground">Негативных</p></div></div></CardContent></Card>
-          <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-primary/10"><BarChart3 size={18} className="text-primary" /></div><div><p className="text-2xl font-bold">{positiveRatio}%</p><p className="text-xs text-muted-foreground">Позитивных</p></div></div></CardContent></Card>
+          <Card>
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/8"><MessageSquare size={16} className="text-primary" /></div>
+                <div>
+                  <p className="text-xl font-semibold">{totalCount}</p>
+                  <p className="text-[11px] text-muted-foreground">Всего отзывов</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-positive/8"><TrendingUp size={16} className="text-positive" /></div>
+                <div>
+                  <p className="text-xl font-semibold">{positiveCount}</p>
+                  <p className="text-[11px] text-muted-foreground">Позитивных</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-negative/8"><TrendingDown size={16} className="text-negative" /></div>
+                <div>
+                  <p className="text-xl font-semibold">{negativeCount}</p>
+                  <p className="text-[11px] text-muted-foreground">Негативных</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/8"><BarChart3 size={16} className="text-primary" /></div>
+                <div>
+                  <p className="text-xl font-semibold">{positiveRatio}%</p>
+                  <p className="text-[11px] text-muted-foreground">Позитивных</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Sentiment Timeline (Area chart) */}
+        {/* Sentiment Timeline */}
         <SentimentTimeline data={filtered} granularity={timeGranularity} />
 
         {/* Employee Bar Chart */}
@@ -254,65 +292,65 @@ export default function Dashboard() {
         {/* Top subcategories */}
         <div className="grid md:grid-cols-2 gap-4">
           <Card>
-            <CardHeader><CardTitle className="text-base text-positive">Топ позитивных подкатегорий</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-positive">Топ позитивных подкатегорий</CardTitle></CardHeader>
             <CardContent>
               {topSubcats.positive.length > 0 ? (
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={220}>
                   <RBarChart data={topSubcats.positive} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis type="number" tick={{ fontSize: 11 }} />
-                    <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 11 }} />
+                    <XAxis type="number" tick={{ fontSize: 10 }} />
+                    <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 10 }} />
                     <Tooltip />
                     <Bar dataKey="count" fill="hsl(var(--positive))" radius={[0, 4, 4, 0]} name="Кол-во" />
                   </RBarChart>
                 </ResponsiveContainer>
-              ) : <p className="text-muted-foreground text-sm">Нет данных</p>}
+              ) : <p className="text-muted-foreground text-xs text-center py-6">Нет данных</p>}
             </CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle className="text-base text-negative">Топ негативных подкатегорий</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-negative">Топ негативных подкатегорий</CardTitle></CardHeader>
             <CardContent>
               {topSubcats.negative.length > 0 ? (
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={220}>
                   <RBarChart data={topSubcats.negative} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis type="number" tick={{ fontSize: 11 }} />
-                    <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 11 }} />
+                    <XAxis type="number" tick={{ fontSize: 10 }} />
+                    <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 10 }} />
                     <Tooltip />
                     <Bar dataKey="count" fill="hsl(var(--negative))" radius={[0, 4, 4, 0]} name="Кол-во" />
                   </RBarChart>
                 </ResponsiveContainer>
-              ) : <p className="text-muted-foreground text-sm">Нет данных</p>}
+              ) : <p className="text-muted-foreground text-xs text-center py-6">Нет данных</p>}
             </CardContent>
           </Card>
         </div>
 
         {/* Recipients table */}
         <Card>
-          <CardHeader><CardTitle className="text-base">Получатели (агрегат)</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Получатели</CardTitle></CardHeader>
           <CardContent>
-            <div className="overflow-x-auto -mx-6 px-6">
+            <div className="overflow-x-auto -mx-5 px-5">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Сотрудник</TableHead>
-                  <TableHead className="text-center">Всего</TableHead>
-                  <TableHead className="text-center">Позитивных</TableHead>
-                  <TableHead className="text-center">Негативных</TableHead>
-                  <TableHead>Топ подкатегории</TableHead>
+                  <TableHead className="text-xs">Сотрудник</TableHead>
+                  <TableHead className="text-center text-xs">Всего</TableHead>
+                  <TableHead className="text-center text-xs">Позитивных</TableHead>
+                  <TableHead className="text-center text-xs">Негативных</TableHead>
+                  <TableHead className="text-xs">Подкатегории</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {recipientsTable.map(r => (
                   <TableRow key={r.userId}>
-                    <TableCell className="font-medium">{r.name}</TableCell>
-                    <TableCell className="text-center">{r.total}</TableCell>
-                    <TableCell className="text-center text-positive font-medium">{r.positive}</TableCell>
-                    <TableCell className="text-center text-negative font-medium">{r.negative}</TableCell>
-                    <TableCell><div className="flex gap-1 flex-wrap">{r.topSubcats.map(s => <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>)}</div></TableCell>
+                    <TableCell className="font-medium text-xs">{r.name}</TableCell>
+                    <TableCell className="text-center text-xs">{r.total}</TableCell>
+                    <TableCell className="text-center text-xs text-positive font-medium">{r.positive}</TableCell>
+                    <TableCell className="text-center text-xs text-negative font-medium">{r.negative}</TableCell>
+                    <TableCell><div className="flex gap-1 flex-wrap">{r.topSubcats.map(s => <Badge key={s} variant="secondary" className="text-[10px] font-normal">{s}</Badge>)}</div></TableCell>
                   </TableRow>
                 ))}
-                {recipientsTable.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Нет данных</TableCell></TableRow>}
+                {recipientsTable.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8 text-xs">Нет данных</TableCell></TableRow>}
               </TableBody>
             </Table>
             </div>
@@ -323,28 +361,27 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Комментарии (обезличенные)</CardTitle>
+              <CardTitle>Комментарии</CardTitle>
               <div className="flex items-center gap-2">
-                <Label className="text-sm text-muted-foreground">Показать</Label>
+                <Label className="text-[10px] text-muted-foreground">Показать</Label>
                 <Switch checked={showComments} onCheckedChange={setShowComments} />
               </div>
             </div>
           </CardHeader>
           {showComments && (
             <CardContent>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
+              <div className="space-y-2 max-h-80 overflow-y-auto">
                 {filtered.map(f => (
-                  <div key={f.id} className="p-3 rounded-lg bg-muted/50 text-sm">
+                  <div key={f.id} className="p-3 rounded-lg bg-muted/50 text-xs">
                     <div className="flex items-center gap-2 mb-1">
-                      <Badge variant={f.sentiment === 'positive' ? 'default' : 'destructive'} className={cn("text-xs", f.sentiment === 'positive' && 'bg-positive')}>{f.sentiment === 'positive' ? 'Позитивный' : 'Негативный'}</Badge>
-                      <span className="text-xs text-muted-foreground">{format(parseISO(f.created_at), 'dd.MM.yyyy')}</span>
-                      <span className="text-xs text-muted-foreground">→ {profileMap[f.to_user_id]?.full_name}</span>
-                      <span className="text-xs text-muted-foreground">({episodes[f.episode_id] || ''})</span>
+                      <Badge variant={f.sentiment === 'positive' ? 'default' : 'destructive'} className={cn("text-[10px]", f.sentiment === 'positive' && 'bg-positive')}>{f.sentiment === 'positive' ? 'Позитивный' : 'Негативный'}</Badge>
+                      <span className="text-[10px] text-muted-foreground">{format(parseISO(f.created_at), 'dd.MM.yyyy')}</span>
+                      <span className="text-[10px] text-muted-foreground">→ {profileMap[f.to_user_id]?.full_name}</span>
                     </div>
-                    <p className="text-foreground">{f.comment}</p>
+                    <p className="text-foreground leading-relaxed">{f.comment}</p>
                   </div>
                 ))}
-                {filtered.length === 0 && <p className="text-center text-muted-foreground py-4">Нет комментариев</p>}
+                {filtered.length === 0 && <p className="text-center text-muted-foreground py-4 text-xs">Нет комментариев</p>}
               </div>
             </CardContent>
           )}
@@ -355,7 +392,6 @@ export default function Dashboard() {
 
         {/* Heatmap */}
         <InteractionHeatmap profiles={profiles} feedbackEdges={graphEdges} />
-
       </div>
     </AppLayout>
   );
