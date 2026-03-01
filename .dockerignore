@@ -1,0 +1,11 @@
+node_modules
+dist
+.next
+logs
+tmp
+.env
+.env.production
+.git
+*.md
+.vscode
+.idea
