@@ -441,6 +441,7 @@ export default function Dashboard() {
             <CardTitle className="text-base">Получатели (агрегат)</CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -474,6 +475,7 @@ export default function Dashboard() {
                 )}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
 
@@ -493,7 +495,7 @@ export default function Dashboard() {
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {filtered.map(f => (
                   <div key={f.id} className="p-3 rounded-lg bg-muted/50 text-sm">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <Badge variant={f.sentiment === 'positive' ? 'default' : 'destructive'} className={cn("text-xs", f.sentiment === 'positive' && 'bg-positive')}>
                         {f.sentiment === 'positive' ? 'Позитивный' : 'Негативный'}
                       </Badge>

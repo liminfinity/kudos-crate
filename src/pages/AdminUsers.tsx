@@ -49,6 +49,7 @@ export default function AdminUsers() {
 
         <Card>
           <CardContent className="pt-4">
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -77,6 +78,7 @@ export default function AdminUsers() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
       </div>

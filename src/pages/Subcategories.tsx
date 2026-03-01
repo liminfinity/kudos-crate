@@ -55,7 +55,7 @@ export default function SubcategoriesPage() {
   return (
     <AppLayout>
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold">Подкатегории</h1>
             <p className="text-muted-foreground">Управление справочником подкатегорий отзывов</p>
@@ -102,6 +102,7 @@ export default function SubcategoriesPage() {
             </div>
           </CardHeader>
           <CardContent>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -132,6 +133,7 @@ export default function SubcategoriesPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
 

@@ -42,6 +42,7 @@ export default function AdminTeams() {
         </div>
         <Card>
           <CardContent className="pt-4">
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -60,6 +61,7 @@ export default function AdminTeams() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
       </div>

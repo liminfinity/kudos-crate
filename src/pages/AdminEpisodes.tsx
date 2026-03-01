@@ -23,6 +23,7 @@ export default function AdminEpisodes() {
         </div>
         <Card>
           <CardContent className="pt-4">
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -43,6 +44,7 @@ export default function AdminEpisodes() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
