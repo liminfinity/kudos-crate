@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      embed_responses: {
+        Row: {
+          answers_json: Json
+          created_at: string
+          cycle_id: string
+          id: string
+          metadata: Json | null
+          respondent_email: string | null
+          source: string
+          template_id: string
+        }
+        Insert: {
+          answers_json?: Json
+          created_at?: string
+          cycle_id: string
+          id?: string
+          metadata?: Json | null
+          respondent_email?: string | null
+          source?: string
+          template_id: string
+        }
+        Update: {
+          answers_json?: Json
+          created_at?: string
+          cycle_id?: string
+          id?: string
+          metadata?: Json | null
+          respondent_email?: string | null
+          source?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "embed_responses_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "survey_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "embed_responses_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "survey_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feedback: {
         Row: {
           comment: string

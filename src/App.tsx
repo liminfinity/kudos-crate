@@ -24,6 +24,8 @@ import KudosDashboard from "./pages/KudosDashboard";
 import SatisfactionAnalytics from "./pages/SatisfactionAnalytics";
 import EngagementAnalytics from "./pages/EngagementAnalytics";
 import Recommendations from "./pages/Recommendations";
+import EmbedSurvey from "./pages/EmbedSurvey";
+import EmbedSettings from "./pages/EmbedSettings";
 import NotFound from "./pages/NotFound";
 import { AssistantMira } from "./components/AssistantMira";
 
@@ -64,6 +66,8 @@ const App = () => (
             <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute>} />
             <Route path="/admin/teams" element={<ProtectedRoute allowedRoles={['admin']}><AdminTeams /></ProtectedRoute>} />
             <Route path="/admin/episodes" element={<ProtectedRoute allowedRoles={['admin']}><AdminEpisodes /></ProtectedRoute>} />
+            <Route path="/admin/embed" element={<ProtectedRoute allowedRoles={['admin']}><EmbedSettings /></ProtectedRoute>} />
+            <Route path="/embed/survey/:cycleId" element={<EmbedSurvey />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <AssistantMira />

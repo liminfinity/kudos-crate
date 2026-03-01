@@ -20,6 +20,7 @@ import {
   ThumbsUp,
   Zap,
   Lightbulb,
+  Code2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
@@ -50,6 +51,7 @@ const navItems: NavItem[] = [
   { label: 'Пользователи', path: '/admin/users', icon: <Users size={18} />, roles: ['admin'] },
   { label: 'Команды', path: '/admin/teams', icon: <Building2 size={18} />, roles: ['admin'] },
   { label: 'Эпизоды', path: '/admin/episodes', icon: <CalendarDays size={18} />, roles: ['admin'] },
+  { label: 'Встраивание', path: '/admin/embed', icon: <Code2 size={18} />, roles: ['admin'] },
 ];
 
 function NavLinks({ items, location, onNavigate }: { items: NavItem[]; location: ReturnType<typeof useLocation>; onNavigate?: () => void }) {
