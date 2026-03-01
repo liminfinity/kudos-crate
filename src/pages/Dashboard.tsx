@@ -12,6 +12,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Download, TrendingUp, TrendingDown, MessageSquare, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Profile, Team } from '@/lib/supabase-types';
+import { MiraHint } from '@/components/MiraHint';
 import { RelationshipGraph } from '@/components/RelationshipGraph';
 import { InteractionHeatmap } from '@/components/InteractionHeatmap';
 
@@ -245,6 +246,13 @@ export default function Dashboard() {
           <Card><CardContent className="pt-5"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-primary/10"><BarChart3 size={18} className="text-primary" /></div><div><p className="text-2xl font-bold">{positiveRatio}%</p><p className="text-xs text-muted-foreground">Позитивных</p></div></div></CardContent></Card>
         </div>
 
+        {/* Mira insight */}
+        {totalCount > 0 && negativeCount > positiveCount && (
+          <MiraHint variant="intervention">
+            Негативных отзывов больше, чем позитивных. Рекомендую посмотреть, какие подкатегории лидируют, и обсудить с руководителями.
+          </MiraHint>
+        )}
+
         {/* Sentiment Timeline (Area chart) */}
         <SentimentTimeline data={filtered} granularity={timeGranularity} />
 
@@ -351,10 +359,10 @@ export default function Dashboard() {
         </Card>
 
         {/* Relationship Graph */}
-        <RelationshipGraph profiles={profiles} feedbackEdges={graphEdges} />
+        <RelationshipGraph profiles={profiles} feedbackEdges={graphEdges} teams={teams} />
 
         {/* Heatmap */}
-        <InteractionHeatmap profiles={profiles} feedbackEdges={graphEdges} />
+        <InteractionHeatmap profiles={profiles} feedbackEdges={graphEdges} teams={teams} />
 
       </div>
     </AppLayout>

@@ -15,6 +15,7 @@ import { CheckCircle2, Plus, AlertCircle, Search, X, AlertTriangle, Loader2 } fr
 import { useTextProcessor } from '@/hooks/useTextProcessor';
 import { cn } from '@/lib/utils';
 import type { Profile, WorkEpisode, Subcategory, SentimentType } from '@/lib/supabase-types';
+import { MiraHint } from '@/components/MiraHint';
 
 interface SubcategoryExt extends Subcategory {
   is_critical: boolean;
@@ -219,6 +220,10 @@ export default function FeedbackForm() {
         <h1 className="text-2xl font-bold mb-1">Новый отзыв</h1>
         <p className="text-muted-foreground mb-6">Оставьте структурированную обратную связь коллеге</p>
 
+        <MiraHint variant="tip" className="mb-4">
+          Постарайтесь описать ситуацию конкретно — это поможет коллеге понять, что именно было ценно или что можно улучшить.
+        </MiraHint>
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
@@ -342,6 +347,11 @@ export default function FeedbackForm() {
           <Card>
             <CardHeader className="pb-3"><CardTitle className="text-base">Комментарий</CardTitle></CardHeader>
             <CardContent>
+              {comment.length > 200 && (
+                <MiraHint variant="intervention" className="mb-3">
+                  Текст довольно длинный. Могу помочь структурировать — выделить главное и убрать лишнее.
+                </MiraHint>
+              )}
               <Textarea value={comment} onChange={e => setComment(e.target.value)}
                 placeholder={hasCriticalSelected ? "Опишите ситуацию подробно (минимум 50 символов)..." : "Опишите ситуацию подробнее (минимум 10 символов)..."}
                 rows={4} maxLength={500} />
