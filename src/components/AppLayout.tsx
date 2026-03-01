@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { Activity, ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -11,19 +11,15 @@ import {
   LogOut,
   Shield,
   Network,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-  ClipboardList,
-  BookOpen,
-  PieChart,
-  Activity,
   AlertTriangle,
-  Heart,
   Award,
-} from 'lucide-react';
+  BookOpen,
+  ClipboardList,
+  Heart,
+  PieChart,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
 interface NavItem {
   label: string;
@@ -46,7 +42,7 @@ const navItems: NavItem[] = [
   { label: 'Пользователи', path: '/admin/users', icon: <Users size={18} />, roles: ['admin'] },
   { label: 'Команды', path: '/admin/teams', icon: <Building2 size={18} />, roles: ['admin'] },
   { label: 'Эпизоды', path: '/admin/episodes', icon: <CalendarDays size={18} />, roles: ['admin'] },
-  { label: "Отношения", path: "/admin/relationships", icon: <Network size={18}/>, roles: ["admin"] },
+  { label: "Отношения", path: "/admin/relationships", icon: <Network size={18} />, roles: ["admin"] },
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {
