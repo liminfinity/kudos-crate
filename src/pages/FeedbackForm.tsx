@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
-import { CheckCircle2, Plus, AlertCircle, Search, X, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Plus, AlertCircle, Search, X, AlertTriangle, Loader2 } from 'lucide-react';
+import { useTextProcessor } from '@/hooks/useTextProcessor';
 import { cn } from '@/lib/utils';
 import type { Profile, WorkEpisode, Subcategory, SentimentType } from '@/lib/supabase-types';
 
@@ -37,6 +38,7 @@ export default function FeedbackForm() {
   
   const [userSearch, setUserSearch] = useState('');
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const { processText, processing } = useTextProcessor();
 
   const [newEpOpen, setNewEpOpen] = useState(false);
   const [newEpTitle, setNewEpTitle] = useState('');
@@ -125,9 +127,17 @@ export default function FeedbackForm() {
     setError('');
 
     try {
+      // Process text with AI
+      const textResult = await processText(comment, hasCriticalSelected ? 'critical' : 'feedback');
+      if (textResult?.status === 'INVALID') {
+        setSubmitting(false);
+        return;
+      }
+      const processedComment = textResult?.processed_text || comment;
+
       const feedbackPayload: any = {
         sentiment: derivedSentiment,
-        comment,
+        comment: processedComment,
         is_critical: hasCriticalSelected,
       };
 
@@ -344,8 +354,8 @@ export default function FeedbackForm() {
             </CardContent>
           </Card>
 
-          <Button type="submit" size="lg" className="w-full" disabled={!isValid || submitting}>
-            {submitting ? 'Отправка...' : isUpdate ? 'Обновить отзыв' : hasCriticalSelected ? '⚠️ Отправить отзыв о нарушении' : 'Отправить отзыв'}
+          <Button type="submit" size="lg" className="w-full" disabled={!isValid || submitting || processing}>
+            {processing ? <><Loader2 size={16} className="animate-spin mr-2" />Проверяем текст...</> : submitting ? 'Отправка...' : isUpdate ? 'Обновить отзыв' : hasCriticalSelected ? '⚠️ Отправить отзыв о нарушении' : 'Отправить отзыв'}
           </Button>
         </form>
       </div>

@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { CheckCircle2, AlertCircle, Search, X, Heart } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Search, X, Heart, Loader2 } from 'lucide-react';
+import { useTextProcessor } from '@/hooks/useTextProcessor';
 import { cn } from '@/lib/utils';
 import type { Profile } from '@/lib/supabase-types';
 
@@ -32,6 +33,7 @@ export default function KudosForm() {
   const [monthlyCount, setMonthlyCount] = useState(0);
   const [userSearch, setUserSearch] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const { processText, processing } = useTextProcessor();
 
   useEffect(() => { loadData(); }, []);
 
@@ -74,11 +76,22 @@ export default function KudosForm() {
         return;
       }
 
+      // Process comment with AI if present
+      let processedComment = comment || null;
+      if (comment && comment.trim().length > 0) {
+        const textResult = await processText(comment, 'kudos');
+        if (textResult?.status === 'INVALID') {
+          setSubmitting(false);
+          return;
+        }
+        processedComment = textResult?.processed_text || comment;
+      }
+
       const { error: insertErr } = await supabase.from('kudos').insert({
         from_user_id: user.id,
         to_user_id: toUserId,
         category,
-        comment: comment || null,
+        comment: processedComment,
       } as any);
       if (insertErr) throw insertErr;
       setSubmitted(true);
@@ -191,8 +204,8 @@ export default function KudosForm() {
               </CardContent>
             </Card>
 
-            <Button type="submit" size="lg" className="w-full" disabled={!isValid || submitting}>
-              {submitting ? 'Отправка...' : '💜 Отправить Kudos'}
+            <Button type="submit" size="lg" className="w-full" disabled={!isValid || submitting || processing}>
+              {processing ? <><Loader2 size={16} className="animate-spin mr-2" />Проверяем текст...</> : submitting ? 'Отправка...' : '💜 Отправить Kudos'}
             </Button>
           </form>
         )}

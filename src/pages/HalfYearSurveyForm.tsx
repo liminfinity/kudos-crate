@@ -11,9 +11,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { CheckCircle2, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Search, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Profile } from '@/lib/supabase-types';
+import { useTextProcessor } from '@/hooks/useTextProcessor';
 
 const STEPS = [
   'Общая информация',
@@ -127,6 +128,7 @@ export default function HalfYearSurveyForm() {
   const [assignmentData, setAssignmentData] = useState<any>(null);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [error, setError] = useState('');
+  const { processText, processing } = useTextProcessor();
 
   // Sociometry autocomplete
   const [socSearch, setSocSearch] = useState('');
@@ -245,18 +247,37 @@ export default function HalfYearSurveyForm() {
     setSubmitting(true);
     setError('');
     try {
+      // Process text fields with AI
+      const textFields: (keyof Answers)[] = ['main_work', 'main_achievement', 'learned', 'want_to_develop', 'feedback_helps', 'feedback_hinders', 'plans', 'important'];
+      const processedAnswers = { ...answers };
+      for (const field of textFields) {
+        const val = processedAnswers[field];
+        if (typeof val === 'string' && val.trim().length > 3) {
+          const result = await processText(val, 'survey');
+          if (result?.status === 'INVALID') {
+            setError(`Текст в поле "${field}" не прошёл проверку. Уточните формулировку.`);
+            setSubmitting(false);
+            return;
+          }
+          if (result?.processed_text) {
+            (processedAnswers as any)[field] = result.processed_text;
+          }
+        }
+      }
+      setAnswers(processedAnswers);
+
       // Save response
       const { data: existing } = await supabase.from('survey_responses')
         .select('id').eq('assignment_id', assignmentId).maybeSingle();
 
       if (existing) {
         await supabase.from('survey_responses').update({
-          answers_json: answers as any,
+          answers_json: processedAnswers as any,
         }).eq('id', existing.id);
       } else {
         await supabase.from('survey_responses').insert({
           assignment_id: assignmentId,
-          answers_json: answers as any,
+          answers_json: processedAnswers as any,
         });
       }
 
