@@ -7,8 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy, Code2, ExternalLink, Check, MessageSquarePlus, Heart, ClipboardList } from 'lucide-react';
+import { Copy, Code2, ExternalLink, Check, MessageSquarePlus, Heart, ClipboardList, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
+import type { Team } from '@/lib/supabase-types';
 
 interface Cycle {
   id: string;
@@ -25,29 +26,36 @@ interface Episode {
   date: string;
 }
 
-type EmbedType = 'survey' | 'feedback' | 'kudos';
+type EmbedType = 'survey' | 'feedback' | 'kudos' | 'top-kudos';
 
 export default function EmbedSettings() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [embedType, setEmbedType] = useState<EmbedType>('survey');
   const [selectedCycleId, setSelectedCycleId] = useState('');
   const [selectedEpisodeId, setSelectedEpisodeId] = useState('');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
+  // Top Kudos settings
+  const [kudosPeriod, setKudosPeriod] = useState<'7d' | '30d' | '90d'>('30d');
+  const [kudosTeam, setKudosTeam] = useState('');
+  const [kudosLimit, setKudosLimit] = useState<'5' | '10'>('10');
 
   const baseUrl = window.location.origin;
 
   useEffect(() => { loadData(); }, []);
 
   async function loadData() {
-    const [cycRes, epRes] = await Promise.all([
+    const [cycRes, epRes, teamRes] = await Promise.all([
       supabase.from('survey_cycles').select('id, label, status, period_start, period_end, template:survey_templates!inner(name)').order('created_at', { ascending: false }),
       supabase.from('work_episodes').select('id, title, date').order('date', { ascending: false }).limit(50),
+      supabase.from('teams').select('*'),
     ]);
     if (cycRes.data) { setCycles(cycRes.data as any); if (cycRes.data.length > 0) setSelectedCycleId(cycRes.data[0].id); }
     if (epRes.data) { setEpisodes(epRes.data as unknown as Episode[]); if (epRes.data.length > 0) setSelectedEpisodeId(epRes.data[0].id); }
+    if (teamRes.data) setTeams(teamRes.data as unknown as Team[]);
     setLoading(false);
   }
 
@@ -55,10 +63,12 @@ export default function EmbedSettings() {
     ? `${baseUrl}/embed/survey/${selectedCycleId}?theme=${theme}`
     : embedType === 'feedback'
     ? `${baseUrl}/embed/feedback?episodeId=${selectedEpisodeId}&theme=${theme}`
+    : embedType === 'top-kudos'
+    ? `${baseUrl}/embed/top-kudos?period=${kudosPeriod}&limit=${kudosLimit}${kudosTeam ? `&teamId=${kudosTeam}` : ''}&theme=${theme}`
     : `${baseUrl}/embed/kudos?theme=${theme}`;
 
   function generateIframeCode() {
-    const height = embedType === 'kudos' ? 520 : embedType === 'feedback' ? 720 : 600;
+    const height = embedType === 'top-kudos' ? 520 : embedType === 'kudos' ? 520 : embedType === 'feedback' ? 720 : 600;
     return `<iframe
   src="${embedUrl}"
   width="100%"
@@ -80,6 +90,7 @@ export default function EmbedSettings() {
     survey: { label: 'Опрос', icon: ClipboardList, desc: 'Встроить полугодовой опрос' },
     feedback: { label: 'Отзыв по эпизоду', icon: MessageSquarePlus, desc: 'Отзыв на конкретный рабочий эпизод' },
     kudos: { label: 'Благодарность', icon: Heart, desc: 'Отправить kudos коллеге' },
+    'top-kudos': { label: 'Топ Kudos', icon: Trophy, desc: 'Рейтинг сотрудников по благодарностям' },
   };
 
   return (
@@ -95,7 +106,7 @@ export default function EmbedSettings() {
             <Card>
               <CardHeader><CardTitle className="text-base">Тип встраивания</CardTitle></CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                   {(Object.entries(embedTypeLabels) as [EmbedType, typeof embedTypeLabels.survey][]).map(([type, info]) => {
                     const Icon = info.icon;
                     return (
@@ -143,6 +154,41 @@ export default function EmbedSettings() {
                         </SelectContent>
                       </Select>
                     </div>
+                  )}
+                  {embedType === 'top-kudos' && (
+                    <>
+                      <div>
+                        <Label>Период</Label>
+                        <Select value={kudosPeriod} onValueChange={(v: '7d' | '30d' | '90d') => setKudosPeriod(v)}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="7d">7 дней</SelectItem>
+                            <SelectItem value="30d">30 дней</SelectItem>
+                            <SelectItem value="90d">90 дней</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Команда</Label>
+                        <Select value={kudosTeam} onValueChange={setKudosTeam}>
+                          <SelectTrigger><SelectValue placeholder="Все" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Все команды</SelectItem>
+                            {teams.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Показывать</Label>
+                        <Select value={kudosLimit} onValueChange={(v: '5' | '10') => setKudosLimit(v)}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="5">Топ 5</SelectItem>
+                            <SelectItem value="10">Топ 10</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
                   )}
                   <div>
                     <Label>Тема</Label>
