@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/AppLayout';
@@ -17,6 +18,7 @@ import type { Profile, Team, AppRole } from '@/lib/supabase-types';
 
 export default function AdminUsers() {
   const { user } = useAuth();
+  const location = useLocation();
   const [profiles, setProfiles] = useState<(Profile & { role?: AppRole; teamName?: string })[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
 
@@ -183,10 +185,24 @@ export default function AdminUsers() {
   return (
     <AppLayout>
       <div className="space-y-6 animate-fade-in">
+        {/* Admin sub-navigation */}
+        <div className="flex flex-wrap gap-2">
+          {[
+            { label: 'Пользователи', path: '/admin/users' },
+            { label: 'Команды', path: '/admin/teams' },
+            { label: 'Эпизоды', path: '/admin/episodes' },
+            { label: 'Подкатегории', path: '/subcategories' },
+            { label: 'Встраивание', path: '/admin/embed' },
+          ].map(item => (
+            <Link key={item.path} to={item.path}>
+              <Button variant={location.pathname === item.path ? 'default' : 'outline'} size="sm" className="text-xs">{item.label}</Button>
+            </Link>
+          ))}
+        </div>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Пользователи</h1>
-            <p className="text-muted-foreground">Управление пользователями системы</p>
+            <p className="text-muted-foreground">Управление пользователями</p>
           </div>
           <Button onClick={() => setCreateOpen(true)} className="gap-1">
             <Plus size={16} /> Создать пользователя

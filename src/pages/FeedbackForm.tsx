@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { Link, useLocation } from 'react-router-dom';
 import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,7 @@ interface SubcategoryExt extends Subcategory {
 
 export default function FeedbackForm() {
   const { user } = useAuth();
+  const location = useLocation();
   const [episodes, setEpisodes] = useState<WorkEpisode[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [subcategories, setSubcategories] = useState<SubcategoryExt[]>([]);
@@ -221,12 +223,14 @@ export default function FeedbackForm() {
   return (
     <AppLayout>
       <div className="max-w-2xl mx-auto animate-fade-in">
-        <h1 className="text-2xl font-bold mb-1">Новый отзыв</h1>
-        <p className="text-muted-foreground mb-6">Оставьте структурированную обратную связь коллеге</p>
-
-        <MiraHint variant="tip" className="mb-4">
-          Постарайтесь описать ситуацию конкретно — это поможет коллеге понять, что именно было ценно или что можно улучшить.
-        </MiraHint>
+        {/* Quick nav to related actions */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          <Link to="/feedback/new"><Button variant={location.pathname === '/feedback/new' ? 'default' : 'outline'} size="sm" className="text-xs">Отзыв</Button></Link>
+          <Link to="/feedback-180"><Button variant={location.pathname === '/feedback-180' ? 'default' : 'outline'} size="sm" className="text-xs">Отзыв 180</Button></Link>
+          <Link to="/kudos/new"><Button variant={location.pathname === '/kudos/new' ? 'default' : 'outline'} size="sm" className="text-xs">Благодарность</Button></Link>
+        </div>
+        <h1 className="text-2xl font-bold mb-1">Отзыв</h1>
+        <p className="text-muted-foreground mb-6">Обратная связь коллеге</p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
