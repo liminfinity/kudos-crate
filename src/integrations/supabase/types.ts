@@ -201,6 +201,115 @@ export type Database = {
           },
         ]
       }
+      review_360_assignments: {
+        Row: {
+          created_at: string
+          cycle_id: string
+          id: string
+          reviewee_user_id: string
+          reviewer_user_id: string
+          status: string
+          submitted_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          cycle_id: string
+          id?: string
+          reviewee_user_id: string
+          reviewer_user_id: string
+          status?: string
+          submitted_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          cycle_id?: string
+          id?: string
+          reviewee_user_id?: string
+          reviewer_user_id?: string
+          status?: string
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_360_assignments_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "review_360_cycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_360_cycles: {
+        Row: {
+          created_at: string
+          created_by: string
+          due_date: string
+          id: string
+          max_assignments_per_reviewer: number
+          open_from: string
+          required_reviews_per_user: number
+          status: string
+          title: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          due_date: string
+          id?: string
+          max_assignments_per_reviewer?: number
+          open_from: string
+          required_reviews_per_user?: number
+          status?: string
+          title: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          due_date?: string
+          id?: string
+          max_assignments_per_reviewer?: number
+          open_from?: string
+          required_reviews_per_user?: number
+          status?: string
+          title?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      review_360_responses: {
+        Row: {
+          answers_json: Json
+          assignment_id: string
+          created_at: string
+          id: string
+          text_summary: string | null
+        }
+        Insert: {
+          answers_json?: Json
+          assignment_id: string
+          created_at?: string
+          id?: string
+          text_summary?: string | null
+        }
+        Update: {
+          answers_json?: Json
+          assignment_id?: string
+          created_at?: string
+          id?: string
+          text_summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_360_responses_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: true
+            referencedRelation: "review_360_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subcategories: {
         Row: {
           created_at: string
