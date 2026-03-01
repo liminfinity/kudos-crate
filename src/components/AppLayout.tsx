@@ -9,7 +9,7 @@ import {
   Building2,
   CalendarDays,
   LogOut,
-  Shield,
+  MessageSquare,
   ClipboardList,
   BookOpen,
   PieChart,
@@ -115,8 +115,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         {/* Mobile header */}
         <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-sidebar text-sidebar-foreground flex-shrink-0">
           <div className="flex items-center gap-2">
-            <Shield size={20} className="text-sidebar-primary" />
-            <h1 className="text-base font-bold">Peer Feedback</h1>
+            <MessageSquare size={20} className="text-sidebar-primary" />
+            <h1 className="text-base font-bold">Опросница</h1>
           </div>
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger asChild>
@@ -128,8 +128,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <SheetTitle className="sr-only">Навигация</SheetTitle>
               <div className="p-5 border-b border-sidebar-border">
                 <div className="flex items-center gap-2">
-                  <Shield size={24} className="text-sidebar-primary" />
-                  <span className="text-lg font-bold">Peer Feedback</span>
+                   <MessageSquare size={24} className="text-sidebar-primary" />
+                  <span className="text-lg font-bold">Опросница</span>
                 </div>
               </div>
               <nav className="flex-1 p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-180px)]">
@@ -154,8 +154,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <aside className="w-64 flex-shrink-0 bg-sidebar text-sidebar-foreground flex flex-col">
         <div className="p-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
-            <Shield size={24} className="text-sidebar-primary" />
-            <h1 className="text-lg font-bold">Peer Feedback</h1>
+            <MessageSquare size={24} className="text-sidebar-primary" />
+            <h1 className="text-lg font-bold">Опросница</h1>
           </div>
         </div>
         
