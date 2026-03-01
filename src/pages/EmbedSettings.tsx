@@ -39,7 +39,7 @@ export default function EmbedSettings() {
   const [loading, setLoading] = useState(true);
   // Top Kudos settings
   const [kudosPeriod, setKudosPeriod] = useState<'7d' | '30d' | '90d'>('30d');
-  const [kudosTeam, setKudosTeam] = useState('');
+  const [kudosTeam, setKudosTeam] = useState('all');
   const [kudosLimit, setKudosLimit] = useState<'5' | '10'>('10');
   // CTA settings
   const [ctaLabel, setCtaLabel] = useState('Перейти в МИРУ');
@@ -73,7 +73,7 @@ export default function EmbedSettings() {
     : embedType === 'feedback'
     ? `${baseUrl}/embed/feedback?episodeId=${selectedEpisodeId}&theme=${theme}`
     : embedType === 'top-kudos'
-    ? `${baseUrl}/embed/top-kudos?period=${kudosPeriod}&limit=${kudosLimit}${kudosTeam ? `&teamId=${kudosTeam}` : ''}&theme=${theme}`
+    ? `${baseUrl}/embed/top-kudos?period=${kudosPeriod}&limit=${kudosLimit}${kudosTeam !== 'all' ? `&teamId=${kudosTeam}` : ''}&theme=${theme}`
     : embedType === 'cta'
     ? `${baseUrl}/embed/cta-button?label=${encodeURIComponent(ctaLabel)}&target=${encodeURIComponent(ctaTargetPath)}${ctaSubtitle ? `&subtitle=${encodeURIComponent(ctaSubtitle)}` : ''}&theme=${theme}&size=${ctaSize}&style=${ctaStyle}&newTab=${ctaNewTab}`
     : `${baseUrl}/embed/kudos?theme=${theme}`;
@@ -196,7 +196,7 @@ export default function EmbedSettings() {
                         <Select value={kudosTeam} onValueChange={setKudosTeam}>
                           <SelectTrigger><SelectValue placeholder="Все" /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Все команды</SelectItem>
+                            <SelectItem value="all">Все команды</SelectItem>
                             {teams.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                           </SelectContent>
                         </Select>
