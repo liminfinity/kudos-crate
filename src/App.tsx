@@ -22,6 +22,7 @@ import CriticalIncidents from "./pages/CriticalIncidents";
 import KudosForm from "./pages/KudosForm";
 import KudosDashboard from "./pages/KudosDashboard";
 import NotFound from "./pages/NotFound";
+import { AssistantMira } from "./components/AssistantMira";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="/admin/episodes" element={<ProtectedRoute allowedRoles={['admin']}><AdminEpisodes /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <AssistantMira />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

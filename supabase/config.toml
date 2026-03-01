@@ -2,3 +2,6 @@ project_id = "etfbdmkefoeyezxetxzl"
 
 [functions.process-text]
 verify_jwt = false
+
+[functions.assistant]
+verify_jwt = false

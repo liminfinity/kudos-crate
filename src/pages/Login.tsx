@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Shield, AlertCircle } from 'lucide-react';
+import { MessageSquare, AlertCircle } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -50,10 +50,10 @@ export default function Login() {
       <div className="w-full max-w-md animate-fade-in">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary mb-4">
-            <Shield size={28} className="text-primary-foreground" />
+            <MessageSquare size={28} className="text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold">Peer Feedback</h1>
-          <p className="text-muted-foreground mt-1">Система обратной связи</p>
+          <h1 className="text-2xl font-bold">Опросница</h1>
+          <p className="text-muted-foreground mt-1">Платформа корпоративной обратной связи и аналитики команд</p>
         </div>
 
         <Card>
