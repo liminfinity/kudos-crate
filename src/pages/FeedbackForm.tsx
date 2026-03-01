@@ -16,6 +16,9 @@ import { useTextProcessor } from '@/hooks/useTextProcessor';
 import { cn } from '@/lib/utils';
 import type { Profile, WorkEpisode, Subcategory, SentimentType } from '@/lib/supabase-types';
 import { MiraHint } from '@/components/MiraHint';
+import { MiraFillAssistant } from '@/components/MiraFillAssistant';
+import { getSubcategoryIcon } from '@/lib/subcategory-icons';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface SubcategoryExt extends Subcategory {
   is_critical: boolean;
@@ -308,14 +311,25 @@ export default function FeedbackForm() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {normalSubcats.map(sub => (
-                  <Badge key={sub.id} variant={selectedSubs.includes(sub.id) ? 'default' : 'outline'}
-                    className={cn("cursor-pointer text-sm py-1.5 px-3 transition-all",
-                      selectedSubs.includes(sub.id) ? sub.sentiment === 'positive' ? 'bg-positive hover:bg-positive/90' : 'bg-negative hover:bg-negative/90' : 'hover:bg-muted',
-                      selectedSubs.length >= 3 && !selectedSubs.includes(sub.id) && 'opacity-40 cursor-not-allowed'
-                    )}
-                    onClick={() => toggleSub(sub.id)}>{sub.name}</Badge>
-                ))}
+                {normalSubcats.map(sub => {
+                  const Icon = getSubcategoryIcon(sub.name);
+                  return (
+                    <Tooltip key={sub.id}>
+                      <TooltipTrigger asChild>
+                        <Badge variant={selectedSubs.includes(sub.id) ? 'default' : 'outline'}
+                          className={cn("cursor-pointer text-sm py-1.5 px-3 transition-all gap-1.5",
+                            selectedSubs.includes(sub.id) ? sub.sentiment === 'positive' ? 'bg-positive hover:bg-positive/90' : 'bg-negative hover:bg-negative/90' : 'hover:bg-muted',
+                            selectedSubs.length >= 3 && !selectedSubs.includes(sub.id) && 'opacity-40 cursor-not-allowed'
+                          )}
+                          onClick={() => toggleSub(sub.id)}>
+                          <Icon size={14} />
+                          {sub.name}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>{sub.sentiment === 'positive' ? 'Позитивная' : 'Негативная'} подкатегория</TooltipContent>
+                    </Tooltip>
+                  );
+                })}
               </div>
               {selectedSubs.length === 0 && <p className="text-xs text-muted-foreground mt-2">Выберите хотя бы одну подкатегорию</p>}
             </CardContent>
@@ -331,21 +345,37 @@ export default function FeedbackForm() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {criticalSubcats.map(sub => (
-                  <Badge key={sub.id} variant={selectedSubs.includes(sub.id) ? 'default' : 'outline'}
-                    className={cn("cursor-pointer text-sm py-1.5 px-3 transition-all",
-                      selectedSubs.includes(sub.id) ? 'bg-destructive hover:bg-destructive/90' : 'hover:bg-destructive/10 border-destructive/30',
-                      selectedSubs.length >= 3 && !selectedSubs.includes(sub.id) && 'opacity-40 cursor-not-allowed'
-                    )}
-                    onClick={() => toggleSub(sub.id)}>{sub.name}</Badge>
-                ))}
+                {criticalSubcats.map(sub => {
+                  const Icon = getSubcategoryIcon(sub.name);
+                  return (
+                    <Tooltip key={sub.id}>
+                      <TooltipTrigger asChild>
+                        <Badge variant={selectedSubs.includes(sub.id) ? 'default' : 'outline'}
+                          className={cn("cursor-pointer text-sm py-1.5 px-3 transition-all gap-1.5",
+                            selectedSubs.includes(sub.id) ? 'bg-destructive hover:bg-destructive/90' : 'hover:bg-destructive/10 border-destructive/30',
+                            selectedSubs.length >= 3 && !selectedSubs.includes(sub.id) && 'opacity-40 cursor-not-allowed'
+                          )}
+                          onClick={() => toggleSub(sub.id)}>
+                          <Icon size={14} />
+                          {sub.name}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>Серьёзное нарушение — будет видно HR</TooltipContent>
+                    </Tooltip>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
 
           {/* Comment */}
           <Card>
-            <CardHeader className="pb-3"><CardTitle className="text-base">Комментарий</CardTitle></CardHeader>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Комментарий</CardTitle>
+                <MiraFillAssistant context="feedback" onResult={(text) => setComment(text)} />
+              </div>
+            </CardHeader>
             <CardContent>
               {comment.length > 200 && (
                 <MiraHint variant="intervention" className="mb-3">

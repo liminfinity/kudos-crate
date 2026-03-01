@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import miraAvatar from '@/assets/mira-avatar.png';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface MiraHintProps {
   children: React.ReactNode;
@@ -13,7 +14,8 @@ interface MiraHintProps {
 
 export function MiraHint({ children, className, dismissible = true, variant = 'inline', action }: MiraHintProps) {
   const [visible, setVisible] = useState(true);
-  if (!visible) return null;
+  const { showMiraHints } = useSettings();
+  if (!visible || !showMiraHints) return null;
 
   return (
     <div className={cn(

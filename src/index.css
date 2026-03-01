@@ -103,4 +103,9 @@
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   }
+  .compact .p-6 { padding: 1rem; }
+  .compact .p-8 { padding: 1.5rem; }
+  .compact .space-y-6 > * + * { margin-top: 1rem; }
+  .compact .space-y-4 > * + * { margin-top: 0.5rem; }
+  .compact .gap-4 { gap: 0.5rem; }
 }
