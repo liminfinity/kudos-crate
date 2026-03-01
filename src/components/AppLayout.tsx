@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   MessageSquarePlus, BarChart3, Tags, Users, Building2, CalendarDays,
   LogOut, ClipboardList, BookOpen, PieChart, Activity, AlertTriangle,
-  Heart, Award, Menu, ChevronLeft,
+  Heart, Award, Menu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
@@ -59,7 +59,7 @@ function NavLinks({ items, location, onNavigate }: { items: NavItem[]; location:
                 to={item.path}
                 onClick={onNavigate}
                 className={cn(
-                  "flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150",
+                  "flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-colors duration-150",
                   location.pathname === item.path || location.pathname.startsWith(item.path + '/')
                     ? "bg-sidebar-accent text-sidebar-primary"
                     : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
@@ -175,7 +175,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       </aside>
 
       <main className="flex-1 overflow-y-auto bg-background">
-        <div className="p-8 max-w-[1200px] mx-auto">
+        <div className="p-6 lg:p-8 max-w-[1200px] mx-auto">
           {children}
         </div>
       </main>

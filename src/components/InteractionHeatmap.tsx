@@ -84,7 +84,7 @@ export function InteractionHeatmap({ profiles, feedbackEdges }: Props) {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div
-                              className="w-8 h-8 rounded-sm flex items-center justify-center text-[9px] font-medium cursor-default transition-transform duration-150 hover:scale-110"
+                              className="w-8 h-8 rounded-sm flex items-center justify-center text-[9px] font-medium cursor-default"
                               style={{
                                 background: isSelf ? 'hsl(var(--muted))' : cellColor(c.positive, c.negative),
                                 color: total > 0 ? 'hsl(var(--foreground))' : 'transparent',
