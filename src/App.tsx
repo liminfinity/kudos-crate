@@ -26,7 +26,15 @@ import SatisfactionAnalytics from "./pages/SatisfactionAnalytics";
 import EngagementAnalytics from "./pages/EngagementAnalytics";
 import Recommendations from "./pages/Recommendations";
 import EmbedSurvey from "./pages/EmbedSurvey";
+import EmbedFeedback from "./pages/EmbedFeedback";
+import EmbedKudos from "./pages/EmbedKudos";
 import EmbedSettings from "./pages/EmbedSettings";
+import Feedback180Form from "./pages/Feedback180Form";
+import Feedback180Analytics from "./pages/Feedback180Analytics";
+import Review360Cycles from "./pages/Review360Cycles";
+import Review360Tasks from "./pages/Review360Tasks";
+import Review360Fill from "./pages/Review360Fill";
+import Review360Analytics from "./pages/Review360Analytics";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import { AssistantMira } from "./components/AssistantMira";
@@ -52,6 +60,8 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<RootRedirect />} />
             <Route path="/feedback/new" element={<ProtectedRoute><FeedbackForm /></ProtectedRoute>} />
+            <Route path="/feedback-180" element={<ProtectedRoute><Feedback180Form /></ProtectedRoute>} />
+            <Route path="/feedback-180/analytics" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><Feedback180Analytics /></ProtectedRoute>} />
             <Route path="/kudos/new" element={<ProtectedRoute><KudosForm /></ProtectedRoute>} />
             <Route path="/mood" element={<ProtectedRoute><CompanyMood /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><Dashboard /></ProtectedRoute>} />
@@ -66,12 +76,18 @@ const App = () => (
             <Route path="/engagement" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><EngagementAnalytics /></ProtectedRoute>} />
             <Route path="/recommendations" element={<ProtectedRoute><Recommendations /></ProtectedRoute>} />
             <Route path="/incidents" element={<ProtectedRoute allowedRoles={['hr', 'admin']}><CriticalIncidents /></ProtectedRoute>} />
+            <Route path="/review-360" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><Review360Cycles /></ProtectedRoute>} />
+            <Route path="/review-360/tasks" element={<ProtectedRoute><Review360Tasks /></ProtectedRoute>} />
+            <Route path="/review-360/fill/:assignmentId" element={<ProtectedRoute><Review360Fill /></ProtectedRoute>} />
+            <Route path="/review-360/:cycleId/analytics" element={<ProtectedRoute allowedRoles={['manager', 'hr', 'admin']}><Review360Analytics /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute>} />
             <Route path="/admin/teams" element={<ProtectedRoute allowedRoles={['admin']}><AdminTeams /></ProtectedRoute>} />
             <Route path="/admin/episodes" element={<ProtectedRoute allowedRoles={['admin']}><AdminEpisodes /></ProtectedRoute>} />
             <Route path="/admin/embed" element={<ProtectedRoute allowedRoles={['admin']}><EmbedSettings /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/embed/survey/:cycleId" element={<EmbedSurvey />} />
+            <Route path="/embed/feedback" element={<EmbedFeedback />} />
+            <Route path="/embed/kudos" element={<EmbedKudos />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <AssistantMira />
