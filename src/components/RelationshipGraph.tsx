@@ -4,11 +4,43 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import type { Profile } from '@/lib/supabase-types';
 
-interface FeedbackEdge { from: string; to: string; sentiment: string; created_at?: string; }
-interface Props { profiles: Profile[]; feedbackEdges: FeedbackEdge[]; }
-interface Node { id: string; label: string; x: number; y: number; vx: number; vy: number; }
-interface Edge { source: string; target: string; sentiment: 'positive' | 'negative' | 'mixed'; positiveCount: number; negativeCount: number; total: number; firstDate?: string; lastDate?: string; }
-interface NodeStats { positive: number; negative: number; total: number; }
+interface FeedbackEdge {
+  from: string;
+  to: string;
+  sentiment: string;
+  created_at?: string;
+}
+
+interface Props {
+  profiles: Profile[];
+  feedbackEdges: FeedbackEdge[];
+}
+
+interface Node {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+}
+
+interface Edge {
+  source: string;
+  target: string;
+  sentiment: 'positive' | 'negative' | 'mixed';
+  positiveCount: number;
+  negativeCount: number;
+  total: number;
+  firstDate?: string;
+  lastDate?: string;
+}
+
+interface NodeStats {
+  positive: number;
+  negative: number;
+  total: number;
+}
 
 export function RelationshipGraph({ profiles, feedbackEdges }: Props) {
   const [sentimentFilter, setSentimentFilter] = useState('all');
@@ -28,11 +60,14 @@ export function RelationshipGraph({ profiles, feedbackEdges }: Props) {
       else edgeMap[key].negative++;
       if (e.created_at) edgeMap[key].dates.push(e.created_at);
     });
+
     return Object.entries(edgeMap)
       .map(([key, counts]) => {
         const [source, target] = key.split('|');
         const total = counts.positive + counts.negative;
-        const sentiment: 'positive' | 'negative' | 'mixed' = counts.positive > 0 && counts.negative > 0 ? 'mixed' : counts.positive > 0 ? 'positive' : 'negative';
+        const sentiment: 'positive' | 'negative' | 'mixed' =
+          counts.positive > 0 && counts.negative > 0 ? 'mixed' :
+          counts.positive > 0 ? 'positive' : 'negative';
         const sorted = counts.dates.sort();
         return { source, target, sentiment, positiveCount: counts.positive, negativeCount: counts.negative, total, firstDate: sorted[0], lastDate: sorted[sorted.length - 1] };
       })
@@ -43,13 +78,22 @@ export function RelationshipGraph({ profiles, feedbackEdges }: Props) {
       });
   }, [feedbackEdges, sentimentFilter]);
 
+  // Node stats for coloring
   const nodeStats = useMemo(() => {
     const stats: Record<string, NodeStats> = {};
     feedbackEdges.forEach(e => {
-      [e.from, e.to].forEach(id => { if (!stats[id]) stats[id] = { positive: 0, negative: 0, total: 0 }; });
-      if (e.sentiment === 'positive') { stats[e.from].positive++; stats[e.to].positive++; }
-      else { stats[e.from].negative++; stats[e.to].negative++; }
-      stats[e.from].total++; stats[e.to].total++;
+      [e.from, e.to].forEach(id => {
+        if (!stats[id]) stats[id] = { positive: 0, negative: 0, total: 0 };
+      });
+      if (e.sentiment === 'positive') {
+        stats[e.from].positive++;
+        stats[e.to].positive++;
+      } else {
+        stats[e.from].negative++;
+        stats[e.to].negative++;
+      }
+      stats[e.from].total++;
+      stats[e.to].total++;
     });
     return stats;
   }, [feedbackEdges]);
@@ -85,6 +129,7 @@ export function RelationshipGraph({ profiles, feedbackEdges }: Props) {
     let running = true;
     let iter = 0;
     const maxIter = 150;
+
     const tick = () => {
       if (!running || iter >= maxIter) return;
       iter++;
@@ -92,6 +137,7 @@ export function RelationshipGraph({ profiles, feedbackEdges }: Props) {
         const next = prev.map(n => ({ ...n }));
         const nm: Record<string, typeof next[0]> = {};
         next.forEach(n => { nm[n.id] = n; });
+
         for (let i = 0; i < next.length; i++) {
           for (let j = i + 1; j < next.length; j++) {
             const dx = next[j].x - next[i].x, dy = next[j].y - next[i].y;
@@ -102,6 +148,7 @@ export function RelationshipGraph({ profiles, feedbackEdges }: Props) {
             next[j].vx += fx; next[j].vy += fy;
           }
         }
+
         edges.forEach(e => {
           const a = nm[e.source], b = nm[e.target];
           if (!a || !b) return;
@@ -111,6 +158,7 @@ export function RelationshipGraph({ profiles, feedbackEdges }: Props) {
           const fx = (dx / dist) * force, fy = (dy / dist) * force;
           a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
         });
+
         next.forEach(n => {
           n.vx += (W / 2 - n.x) * 0.002; n.vy += (H / 2 - n.y) * 0.002;
           n.vx *= 0.85; n.vy *= 0.85;
@@ -133,60 +181,75 @@ export function RelationshipGraph({ profiles, feedbackEdges }: Props) {
   }, [nodes]);
 
   const handleEdgeHover = useCallback((e: React.MouseEvent, edge: Edge) => {
-    setHoveredEdge(edge); setHoveredNode(null); setTooltipPos({ x: e.clientX, y: e.clientY });
+    setHoveredEdge(edge);
+    setHoveredNode(null);
+    setTooltipPos({ x: e.clientX, y: e.clientY });
   }, []);
+
   const handleNodeHover = useCallback((e: React.MouseEvent, nodeId: string) => {
-    setHoveredNode(nodeId); setHoveredEdge(null); setTooltipPos({ x: e.clientX, y: e.clientY });
+    setHoveredNode(nodeId);
+    setHoveredEdge(null);
+    setTooltipPos({ x: e.clientX, y: e.clientY });
   }, []);
 
   const edgeColor = (e: Edge) => {
     const score = e.total > 0 ? (e.positiveCount - e.negativeCount) / e.total : 0;
-    if (score > 0.2) return 'hsl(var(--positive))';
-    if (score < -0.2) return 'hsl(var(--negative))';
-    return 'hsl(var(--muted-foreground))';
+    const absScore = Math.abs(score);
+    // Hue: 0 (red) to 120 (green), interpolated by score sign
+    const hue = score >= 0 ? 120 : 0;
+    // Saturation: 0% at neutral → 80% at extreme
+    const saturation = Math.round(absScore * 80);
+    // Lightness stays readable
+    const lightness = 45;
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   };
 
   const nodeColor = (id: string) => {
     const s = nodeStats[id];
     if (!s || s.total === 0) return 'hsl(var(--muted-foreground))';
-    if (s.positive > s.negative) return 'hsl(var(--positive))';
-    if (s.negative > s.positive) return 'hsl(var(--negative))';
-    return 'hsl(var(--muted-foreground))';
+    if (s.positive > s.negative) return 'hsl(152, 56%, 40%)';
+    if (s.negative > s.positive) return 'hsl(4, 76%, 56%)';
+    return 'hsl(280, 60%, 55%)';
   };
 
-  const edgeWidth = (e: Edge) => Math.max(1, (e.total / maxTotal) * 4);
+  const edgeWidth = (e: Edge) => Math.max(1.5, (e.total / maxTotal) * 6);
+
   const formatDate = (d?: string) => d ? new Date(d).toLocaleDateString('ru-RU') : '—';
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <CardTitle>Граф отношений</CardTitle>
-          <Select value={sentimentFilter} onValueChange={setSentimentFilter}>
-            <SelectTrigger className="w-32 h-7 text-[10px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Все</SelectItem>
-              <SelectItem value="positive">Позитивные</SelectItem>
-              <SelectItem value="negative">Негативные</SelectItem>
-            </SelectContent>
-          </Select>
+          <CardTitle className="text-base">Граф отношений</CardTitle>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground">Тип</Label>
+            <Select value={sentimentFilter} onValueChange={setSentimentFilter}>
+              <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все</SelectItem>
+                <SelectItem value="positive">Позитивные</SelectItem>
+                <SelectItem value="negative">Негативные</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="flex gap-4 text-[10px] text-muted-foreground mt-1">
-          <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-positive" /> Позитивный</span>
-          <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-full bg-negative" /> Негативный</span>
-          <span>Толщина = сила связи</span>
+        <div className="flex gap-4 text-xs text-muted-foreground mt-1">
+          <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full" style={{ background: 'hsl(152, 56%, 40%)' }} /> Позитивный</span>
+          <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full" style={{ background: 'hsl(4, 76%, 56%)' }} /> Негативный</span>
+          <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full" style={{ background: 'hsl(280, 60%, 55%)' }} /> Смешанный</span>
+          <span className="text-[10px]">Толщина = сила связи</span>
         </div>
       </CardHeader>
       <CardContent className="relative">
-        <svg ref={svgRef} viewBox="0 0 600 400" className="w-full h-auto rounded-lg bg-muted/30" style={{ maxHeight: 400 }}>
+        <svg ref={svgRef} viewBox="0 0 600 400" className="w-full h-auto border rounded-lg bg-muted/20" style={{ maxHeight: 400 }}>
           {edges.map((e, i) => {
             const a = nodeMap[e.source], b = nodeMap[e.target];
             if (!a || !b) return null;
             return (
               <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y}
                 stroke={edgeColor(e)} strokeWidth={edgeWidth(e)}
-                strokeOpacity={hoveredEdge === e ? 0.9 : 0.5}
-                className="cursor-pointer transition-opacity duration-150"
+                strokeOpacity={hoveredEdge === e ? 1 : 0.6}
+                className="cursor-pointer"
                 onMouseMove={ev => handleEdgeHover(ev, e)}
                 onMouseLeave={() => setHoveredEdge(null)}
               />
@@ -198,11 +261,11 @@ export function RelationshipGraph({ profiles, feedbackEdges }: Props) {
               onMouseLeave={() => setHoveredNode(null)}
               className="cursor-pointer"
             >
-              <circle cx={n.x} cy={n.y} r={16} fill="hsl(var(--card))" stroke={nodeColor(n.id)} strokeWidth={1.5} />
-              <text x={n.x} y={n.y + 28} textAnchor="middle" fontSize={8} fill="hsl(var(--muted-foreground))" className="pointer-events-none select-none">
+              <circle cx={n.x} cy={n.y} r={18} fill={nodeColor(n.id)} stroke="hsl(var(--background))" strokeWidth={2} opacity={0.9} />
+              <text x={n.x} y={n.y + 30} textAnchor="middle" fontSize={9} fill="hsl(var(--foreground))" className="pointer-events-none select-none">
                 {n.label.length > 14 ? n.label.slice(0, 12) + '…' : n.label}
               </text>
-              <text x={n.x} y={n.y + 3.5} textAnchor="middle" fontSize={8} fill="hsl(var(--foreground))" className="pointer-events-none select-none font-medium">
+              <text x={n.x} y={n.y + 4} textAnchor="middle" fontSize={8} fill="white" className="pointer-events-none select-none font-medium">
                 {n.label.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
               </text>
             </g>
@@ -210,22 +273,24 @@ export function RelationshipGraph({ profiles, feedbackEdges }: Props) {
         </svg>
 
         {hoveredEdge && (
-          <div className="fixed z-50 bg-popover text-popover-foreground border rounded-lg shadow-card-hover px-3 py-2 text-[10px] pointer-events-none"
+          <div className="fixed z-50 bg-popover text-popover-foreground border rounded-lg shadow-lg px-3 py-2 text-xs pointer-events-none"
             style={{ left: tooltipPos.x + 10, top: tooltipPos.y - 40 }}>
-            <p className="font-medium text-xs">{profileMap[hoveredEdge.source]?.full_name || '?'} ↔ {profileMap[hoveredEdge.target]?.full_name || '?'}</p>
-            <p className="text-positive">Позитивных: {hoveredEdge.positiveCount}</p>
-            <p className="text-negative">Негативных: {hoveredEdge.negativeCount}</p>
-            <p>Всего: {hoveredEdge.total}</p>
-            <p className="text-muted-foreground">{formatDate(hoveredEdge.firstDate)} — {formatDate(hoveredEdge.lastDate)}</p>
+            <p className="font-medium">{profileMap[hoveredEdge.source]?.full_name || '?'} ↔ {profileMap[hoveredEdge.target]?.full_name || '?'}</p>
+            <p style={{ color: 'hsl(120, 60%, 40%)' }}>Позитивных: {hoveredEdge.positiveCount}</p>
+            <p style={{ color: 'hsl(0, 60%, 50%)' }}>Негативных: {hoveredEdge.negativeCount}</p>
+            <p>Всего: {hoveredEdge.total} | Баланс: {hoveredEdge.positiveCount - hoveredEdge.negativeCount > 0 ? '+' : ''}{hoveredEdge.positiveCount - hoveredEdge.negativeCount}</p>
+            <p>Score: {hoveredEdge.total > 0 ? ((hoveredEdge.positiveCount - hoveredEdge.negativeCount) / hoveredEdge.total).toFixed(2) : '0'}</p>
+            <p className="text-muted-foreground">Первый: {formatDate(hoveredEdge.firstDate)} · Последний: {formatDate(hoveredEdge.lastDate)}</p>
           </div>
         )}
 
         {hoveredNode && nodeStats[hoveredNode] && (
-          <div className="fixed z-50 bg-popover text-popover-foreground border rounded-lg shadow-card-hover px-3 py-2 text-[10px] pointer-events-none"
+          <div className="fixed z-50 bg-popover text-popover-foreground border rounded-lg shadow-lg px-3 py-2 text-xs pointer-events-none"
             style={{ left: tooltipPos.x + 10, top: tooltipPos.y - 40 }}>
-            <p className="font-medium text-xs">{profileMap[hoveredNode]?.full_name || '?'}</p>
-            <p className="text-positive">Позитивных: {nodeStats[hoveredNode].positive}</p>
-            <p className="text-negative">Негативных: {nodeStats[hoveredNode].negative}</p>
+            <p className="font-medium">{profileMap[hoveredNode]?.full_name || '?'}</p>
+            <p style={{ color: 'hsl(152, 56%, 40%)' }}>Позитивных: {nodeStats[hoveredNode].positive}</p>
+            <p style={{ color: 'hsl(4, 76%, 56%)' }}>Негативных: {nodeStats[hoveredNode].negative}</p>
+            <p>Всего: {nodeStats[hoveredNode].total}</p>
           </div>
         )}
       </CardContent>

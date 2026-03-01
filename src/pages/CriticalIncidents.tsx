@@ -8,8 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { AlertTriangle, Download } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { AlertTriangle, Download, Shield } from 'lucide-react';
 import { format, parseISO, subMonths } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { Profile, Team } from '@/lib/supabase-types';
@@ -59,6 +59,7 @@ export default function CriticalIncidents() {
     return m;
   }, [profiles]);
 
+  // Map feedback to subcategories
   const fbSubMap = useMemo(() => {
     const m: Record<string, string[]> = {};
     feedbackSubs.forEach(fs => {
@@ -70,20 +71,31 @@ export default function CriticalIncidents() {
 
   const filtered = useMemo(() => {
     return incidents.filter(f => {
-      if (teamFilter !== 'all') { const prof = profileMap[f.to_user_id]; if (!prof || prof.team_id !== teamFilter) return false; }
+      if (teamFilter !== 'all') {
+        const prof = profileMap[f.to_user_id];
+        if (!prof || prof.team_id !== teamFilter) return false;
+      }
       if (employeeFilter !== 'all' && f.to_user_id !== employeeFilter) return false;
-      if (categoryFilter !== 'all') { const subs = fbSubMap[f.id] || []; if (!subs.some(s => s === categoryFilter)) return false; }
+      if (categoryFilter !== 'all') {
+        const subs = fbSubMap[f.id] || [];
+        if (!subs.some(s => s === categoryFilter)) return false;
+      }
       return true;
     });
   }, [incidents, teamFilter, employeeFilter, categoryFilter, profileMap, fbSubMap]);
 
+  // Monthly chart
   const monthlyData = useMemo(() => {
     const months: Record<string, number> = {};
-    filtered.forEach(f => { const m = format(parseISO(f.created_at), 'yyyy-MM'); months[m] = (months[m] || 0) + 1; });
+    filtered.forEach(f => {
+      const m = format(parseISO(f.created_at), 'yyyy-MM');
+      months[m] = (months[m] || 0) + 1;
+    });
     return Object.entries(months).sort(([a], [b]) => a.localeCompare(b))
       .map(([m, count]) => ({ month: format(parseISO(m + '-01'), 'MMM yyyy', { locale: ru }), count }));
   }, [filtered]);
 
+  // Team distribution
   const teamDist = useMemo(() => {
     const data: Record<string, { name: string; count: number }> = {};
     filtered.forEach(f => {
@@ -96,10 +108,13 @@ export default function CriticalIncidents() {
     return Object.values(data).sort((a, b) => b.count - a.count);
   }, [filtered, profileMap, teams]);
 
+  // Repeat offenders
   const repeatData = useMemo(() => {
     const counts: Record<string, number> = {};
     filtered.forEach(f => { counts[f.to_user_id] = (counts[f.to_user_id] || 0) + 1; });
-    return Object.entries(counts).filter(([, c]) => c > 1).sort(([, a], [, b]) => b - a)
+    return Object.entries(counts)
+      .filter(([, c]) => c > 1)
+      .sort(([, a], [, b]) => b - a)
       .map(([uid, count]) => ({ name: profileMap[uid]?.full_name || uid, count }));
   }, [filtered, profileMap]);
 
@@ -118,27 +133,31 @@ export default function CriticalIncidents() {
   }
 
   if (role !== 'hr' && role !== 'admin') {
-    return <AppLayout><div className="text-center py-20 text-muted-foreground text-sm">У вас нет доступа к этому разделу</div></AppLayout>;
+    return <AppLayout><div className="text-center py-20 text-muted-foreground">Доступ ограничен</div></AppLayout>;
   }
 
   return (
     <AppLayout>
-      <div className="space-y-8 animate-fade-in">
+      <div className="space-y-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-semibold">Серьёзные сигналы</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Отслеживание значимых инцидентов</p>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-destructive/10"><AlertTriangle size={20} className="text-destructive" /></div>
+            <div>
+              <h1 className="text-2xl font-bold">Серьёзные сигналы</h1>
+              <p className="text-muted-foreground">Отслеживание значимых инцидентов (HR/Admin)</p>
+            </div>
           </div>
-          <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 h-8 text-xs"><Download size={12} /> Экспорт</Button>
+          <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1"><Download size={14} /> Экспорт CSV</Button>
         </div>
 
+        {/* Filters */}
         <Card>
-          <CardContent className="pt-4 pb-4">
+          <CardContent className="pt-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               <div>
-                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Период</Label>
+                <Label className="text-xs text-muted-foreground">Период</Label>
                 <Select value={period} onValueChange={v => setPeriod(v as PeriodPreset)}>
-                  <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="3m">3 месяца</SelectItem>
                     <SelectItem value="6m">6 месяцев</SelectItem>
@@ -147,9 +166,9 @@ export default function CriticalIncidents() {
                 </Select>
               </div>
               <div>
-                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Команда</Label>
+                <Label className="text-xs text-muted-foreground">Команда</Label>
                 <Select value={teamFilter} onValueChange={setTeamFilter}>
-                  <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Все команды</SelectItem>
                     {teams.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
@@ -157,9 +176,9 @@ export default function CriticalIncidents() {
                 </Select>
               </div>
               <div>
-                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Сотрудник</Label>
+                <Label className="text-xs text-muted-foreground">Сотрудник</Label>
                 <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
-                  <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Все</SelectItem>
                     {profiles.map(p => <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>)}
@@ -167,9 +186,9 @@ export default function CriticalIncidents() {
                 </Select>
               </div>
               <div>
-                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Категория</Label>
+                <Label className="text-xs text-muted-foreground">Категория</Label>
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Все</SelectItem>
                     {criticalSubcats.map(s => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}
@@ -180,58 +199,66 @@ export default function CriticalIncidents() {
           </CardContent>
         </Card>
 
+        {/* KPI */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card><CardContent className="pt-4 pb-4"><p className="text-xl font-semibold text-destructive">{filtered.length}</p><p className="text-[11px] text-muted-foreground">Инцидентов</p></CardContent></Card>
-          <Card><CardContent className="pt-4 pb-4"><p className="text-xl font-semibold">{repeatData.length}</p><p className="text-[11px] text-muted-foreground">Повторные</p></CardContent></Card>
-          <Card><CardContent className="pt-4 pb-4"><p className="text-xl font-semibold">{teamDist.length}</p><p className="text-[11px] text-muted-foreground">Команд затронуто</p></CardContent></Card>
+          <Card><CardContent className="pt-5"><p className="text-2xl font-bold text-destructive">{filtered.length}</p><p className="text-xs text-muted-foreground">Инцидентов за период</p></CardContent></Card>
+          <Card><CardContent className="pt-5"><p className="text-2xl font-bold">{repeatData.length}</p><p className="text-xs text-muted-foreground">Повторные нарушители</p></CardContent></Card>
+          <Card><CardContent className="pt-5"><p className="text-2xl font-bold">{teamDist.length}</p><p className="text-xs text-muted-foreground">Команд затронуто</p></CardContent></Card>
         </div>
 
+        {/* Charts */}
         <div className="grid md:grid-cols-2 gap-4">
           <Card>
-            <CardHeader><CardTitle>По месяцам</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Инциденты по месяцам</CardTitle></CardHeader>
             <CardContent>
               {monthlyData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={monthlyData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} />
-                    <Tooltip contentStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="count" fill="hsl(var(--destructive))" radius={[3, 3, 0, 0]} name="Инцидентов" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} name="Инцидентов" />
                   </BarChart>
                 </ResponsiveContainer>
-              ) : <p className="text-muted-foreground text-xs text-center py-8">Нет данных</p>}
+              ) : <p className="text-muted-foreground text-sm text-center py-8">Нет данных</p>}
             </CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle>По командам</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">По командам</CardTitle></CardHeader>
             <CardContent>
               {teamDist.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={teamDist} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis type="number" tick={{ fontSize: 10 }} />
-                    <YAxis dataKey="name" type="category" width={110} tick={{ fontSize: 10 }} />
-                    <Tooltip contentStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="count" fill="hsl(var(--destructive))" radius={[0, 3, 3, 0]} name="Инцидентов" />
+                    <XAxis type="number" tick={{ fontSize: 11 }} />
+                    <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="hsl(var(--destructive))" radius={[0, 4, 4, 0]} name="Инцидентов" />
                   </BarChart>
                 </ResponsiveContainer>
-              ) : <p className="text-muted-foreground text-xs text-center py-8">Нет данных</p>}
+              ) : <p className="text-muted-foreground text-sm text-center py-8">Нет данных</p>}
             </CardContent>
           </Card>
         </div>
 
+        {/* Repeat offenders */}
         {repeatData.length > 0 && (
           <Card>
-            <CardHeader><CardTitle>Повторные нарушения</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Повторные нарушения</CardTitle></CardHeader>
             <CardContent>
               <Table>
-                <TableHeader><TableRow><TableHead className="text-xs">Сотрудник</TableHead><TableHead className="text-center text-xs">Количество</TableHead></TableRow></TableHeader>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Сотрудник</TableHead>
+                    <TableHead className="text-center">Количество</TableHead>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
                   {repeatData.map(r => (
                     <TableRow key={r.name}>
-                      <TableCell className="text-xs">{r.name}</TableCell>
-                      <TableCell className="text-center"><Badge variant="destructive" className="text-[10px]">{r.count}</Badge></TableCell>
+                      <TableCell>{r.name}</TableCell>
+                      <TableCell className="text-center"><Badge variant="destructive">{r.count}</Badge></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -240,18 +267,19 @@ export default function CriticalIncidents() {
           </Card>
         )}
 
+        {/* Details table */}
         <Card>
-          <CardHeader><CardTitle>Детали</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Детали инцидентов</CardTitle></CardHeader>
           <CardContent>
-            <div className="overflow-x-auto -mx-5 px-5">
+            <div className="overflow-x-auto -mx-6 px-6">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs">Дата</TableHead>
-                  <TableHead className="text-xs">Получатель</TableHead>
-                  <TableHead className="text-xs">Команда</TableHead>
-                  <TableHead className="text-xs">Категории</TableHead>
-                  <TableHead className="text-xs">Комментарий</TableHead>
+                  <TableHead>Дата</TableHead>
+                  <TableHead>Получатель</TableHead>
+                  <TableHead>Команда</TableHead>
+                  <TableHead>Категории</TableHead>
+                  <TableHead>Комментарий</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -261,15 +289,15 @@ export default function CriticalIncidents() {
                   const cats = fbSubMap[f.id] || [];
                   return (
                     <TableRow key={f.id}>
-                      <TableCell className="whitespace-nowrap text-xs">{format(parseISO(f.created_at), 'dd.MM.yyyy')}</TableCell>
-                      <TableCell className="text-xs">{prof?.full_name || '—'}</TableCell>
-                      <TableCell className="text-xs">{team || '—'}</TableCell>
-                      <TableCell><div className="flex gap-1 flex-wrap">{cats.map(c => <Badge key={c} variant="outline" className="text-[10px] font-normal">{c}</Badge>)}</div></TableCell>
-                      <TableCell className="max-w-xs truncate text-xs">{f.comment}</TableCell>
+                      <TableCell className="whitespace-nowrap">{format(parseISO(f.created_at), 'dd.MM.yyyy')}</TableCell>
+                      <TableCell>{prof?.full_name || '—'}</TableCell>
+                      <TableCell>{team || '—'}</TableCell>
+                      <TableCell><div className="flex gap-1 flex-wrap">{cats.map(c => <Badge key={c} variant="outline" className="text-xs">{c}</Badge>)}</div></TableCell>
+                      <TableCell className="max-w-xs truncate">{f.comment}</TableCell>
                     </TableRow>
                   );
                 })}
-                {filtered.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8 text-xs">Нет инцидентов</TableCell></TableRow>}
+                {filtered.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Нет инцидентов</TableCell></TableRow>}
               </TableBody>
             </Table>
             </div>
