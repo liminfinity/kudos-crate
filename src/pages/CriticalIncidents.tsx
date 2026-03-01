@@ -245,7 +245,7 @@ export default function CriticalIncidents() {
         {repeatData.length > 0 && (
           <Card>
             <CardHeader><CardTitle className="text-base">Повторные нарушения</CardTitle></CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>

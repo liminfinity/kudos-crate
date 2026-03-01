@@ -129,8 +129,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </Sheet>
         </header>
 
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-4 max-w-7xl mx-auto">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="p-3 sm:p-4 max-w-7xl mx-auto">
             {children}
           </div>
         </main>
@@ -153,8 +153,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         {userInfo}
       </aside>
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-6 md:p-8 max-w-7xl mx-auto">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
           {children}
         </div>
       </main>

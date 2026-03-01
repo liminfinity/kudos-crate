@@ -141,11 +141,11 @@ export function InteractionHeatmap({ profiles, feedbackEdges, teams = [] }: Prop
           <span className="text-[10px]">Видно: {visibleUsers.length}/{allUsers.length}</span>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="flex gap-4">
+      <CardContent className="overflow-hidden">
+        <div className="flex flex-col lg:flex-row gap-4">
           {/* User filter panel */}
           {showPanel && (
-            <div className="w-48 flex-shrink-0 space-y-3 border-r border-border pr-4 animate-fade-in">
+            <div className="w-full lg:w-48 flex-shrink-0 space-y-3 lg:border-r border-b lg:border-b-0 border-border lg:pr-4 pb-4 lg:pb-0 animate-fade-in">
               <div className="relative">
                 <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск..." className="pl-7 h-8 text-xs" />

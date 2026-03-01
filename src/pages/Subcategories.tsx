@@ -100,8 +100,8 @@ export default function SubcategoriesPage() {
               </Select>
             </div>
           </CardHeader>
-          <CardContent>
-            <Table>
+          <CardContent className="overflow-x-auto">
+            <Table className="min-w-[500px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Название</TableHead>
