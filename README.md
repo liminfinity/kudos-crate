@@ -767,6 +767,9 @@ CSI = (Позитивные − Негативные) / Всего
 
 ## 🔌 API — серверные функции
 
+> 📄 **Swagger / OpenAPI**: полная спецификация всех эндпоинтов доступна в [`docs/api/openapi.yaml`](docs/api/openapi.yaml).  
+> Откройте в [Swagger Editor](https://editor.swagger.io/) или [Swagger UI](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/YOUR_REPO/main/docs/api/openapi.yaml) для интерактивного просмотра.
+
 Платформа использует Edge Functions (Deno) для серверной логики:
 
 | Функция | Метод | Описание | Аутентификация |
