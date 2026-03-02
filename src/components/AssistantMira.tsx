@@ -55,6 +55,8 @@ export function AssistantMira() {
     setInput('');
     setIsLoading(true);
 
+    let assistantSoFar = '';
+
     try {
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/assistant`, {
         method: 'POST',
@@ -69,14 +71,51 @@ export function AssistantMira() {
         }),
       });
 
-      if (!resp.ok) {
+      if (!resp.ok || !resp.body) {
         const errData = await resp.json().catch(() => ({}));
         throw new Error(errData.error || 'Ошибка соединения');
       }
 
-      const data = await resp.json();
-      const content = data.choices?.[0]?.message?.content || 'Нет ответа';
-      setMessages(prev => [...prev, { role: 'assistant', content }]);
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') break;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantSoFar += content;
+              setMessages(prev => {
+                const last = prev[prev.length - 1];
+                if (last?.role === 'assistant' && prev.length > newMessages.length) {
+                  return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantSoFar } : m);
+                }
+                return [...prev, { role: 'assistant', content: assistantSoFar }];
+              });
+            }
+          } catch {
+            textBuffer = line + '\n' + textBuffer;
+            break;
+          }
+        }
+      }
     } catch (e) {
       setMessages(prev => [...prev, {
         role: 'assistant',

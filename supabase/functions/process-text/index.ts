@@ -5,8 +5,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const LLM_BASE_URL = "http://84.54.30.173:8000";
-
 const SYSTEM_PROMPTS: Record<string, string> = {
   feedback: `Ты модератор корпоративной HR-платформы. Задача:
 - Удалить мат и оскорбления
@@ -65,6 +63,9 @@ serve(async (req) => {
   }
 
   try {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
     const { text, context } = await req.json();
 
     if (!text || typeof text !== "string" || text.trim().length < 3) {
@@ -78,17 +79,35 @@ serve(async (req) => {
 
     const systemPrompt = SYSTEM_PROMPTS[context] || SYSTEM_PROMPTS.feedback;
 
-    const prompt = `${systemPrompt}\n\nТекст пользователя:\n${text}`;
-
-    const response = await fetch(`${LLM_BASE_URL}/ask`, {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt }),
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: text },
+        ],
+        temperature: 0.1,
+      }),
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ error: "Слишком много запросов, попробуйте позже" }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "Требуется пополнение баланса AI" }), {
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const t = await response.text();
-      console.error("LLM API error:", response.status, t);
+      console.error("AI gateway error:", response.status, t);
       // Fallback: return original text
       return new Response(JSON.stringify({
         status: "OK",
@@ -99,12 +118,12 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    // The external LLM may return the answer in different fields — try common ones
-    const raw = data.answer || data.response || data.text || data.content || data.result || JSON.stringify(data);
+    const raw = data.choices?.[0]?.message?.content || "";
 
     // Extract JSON from response
     let result;
     try {
+      // Try to find JSON in the response
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         result = JSON.parse(jsonMatch[0]);
@@ -112,6 +131,7 @@ serve(async (req) => {
         throw new Error("No JSON found");
       }
     } catch {
+      // Fallback
       result = {
         status: "OK",
         processed_text: text,
