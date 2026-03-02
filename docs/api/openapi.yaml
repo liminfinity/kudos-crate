@@ -1,0 +1,611 @@
+openapi: 3.0.3
+info:
+  title: МИРА — API Backend
+  description: |
+    OpenAPI спецификация всех Edge Functions платформы МИРА.
+    
+    **Базовый URL:** `https://<SUPABASE_URL>/functions/v1`
+    
+    Все функции принимают CORS preflight (OPTIONS).
+    Авторизация: Bearer-токен (JWT) в заголовке `Authorization` для защищённых эндпоинтов.
+    
+    ## AI / LLM интеграция
+    Функции `process-text`, `assistant` и `recommendations` обращаются к Lovable AI Gateway
+    (`https://ai.gateway.lovable.dev/v1/chat/completions`) с моделью `google/gemini-3-flash-preview`.
+  version: 1.0.0
+  contact:
+    name: МИРА Team
+
+servers:
+  - url: https://etfbdmkefoeyezxetxzl.supabase.co/functions/v1
+    description: Production (Lovable Cloud)
+  - url: http://localhost:54321/functions/v1
+    description: Local (Supabase CLI)
+
+tags:
+  - name: LLM
+    description: Эндпоинты с обращением к AI Gateway (Gemini)
+  - name: Admin
+    description: Управление пользователями (только admin)
+  - name: Review 360
+    description: Генерация назначений для 360-ревью
+  - name: Surveys
+    description: Автоматизация опросов (cron)
+  - name: Kudos
+    description: Аналитика благодарностей
+  - name: Seed
+    description: Наполнение демо-данными
+
+paths:
+  /process-text:
+    post:
+      operationId: processText
+      summary: Модерация и обработка текста (AI)
+      description: |
+        Отправляет текст в Gemini для модерации: удаление мата, исправление орфографии,
+        смягчение агрессии. Возвращает обработанный текст + toxicity_score.
+        
+        **AI Gateway:** `POST https://ai.gateway.lovable.dev/v1/chat/completions`  
+        **Модель:** `google/gemini-3-flash-preview`  
+        **Temperature:** `0.1`  
+        **System prompt:** зависит от `context` (feedback / critical / kudos / survey / manager-diary)
+      tags: [LLM]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessTextRequest'
+            examples:
+              feedback:
+                summary: Модерация отзыва
+                value:
+                  text: "Этот тупой дурак опять сорвал дедлайн!"
+                  context: "feedback"
+              kudos:
+                summary: Модерация благодарности
+                value:
+                  text: "Спасибо за помощ с задачей"
+                  context: "kudos"
+      responses:
+        '200':
+          description: Успешная обработка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessTextResponse'
+              examples:
+                modified:
+                  value:
+                    status: "OK"
+                    processed_text: "Коллега снова не уложился в сроки."
+                    toxicity_score: 0.7
+                    was_modified: true
+                clean:
+                  value:
+                    status: "OK"
+                    processed_text: "Спасибо за помощь с задачей"
+                    toxicity_score: 0.0
+                    was_modified: true
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /assistant:
+    post:
+      operationId: assistantChat
+      summary: Контекстный AI-ассистент МИРА (streaming)
+      description: |
+        Стриминговый чат с AI-ассистентом «МИРА». Возвращает SSE-поток (Server-Sent Events).
+        
+        **AI Gateway:** `POST https://ai.gateway.lovable.dev/v1/chat/completions`  
+        **Модель:** `google/gemini-3-flash-preview`  
+        **Stream:** `true`  
+        **System prompt:** строится динамически на основе `user_role` и `current_page`.
+        
+        ### Ролевые ограничения
+        - `employee` — только отзывы, kudos, опросы, навигация
+        - `manager` — + аналитика своей команды, дневник
+        - `hr` — + Critical Incidents, полная аналитика
+        - `admin` — полный доступ
+        
+        ### Контекст страниц
+        Функция содержит описания для 15+ страниц платформы.
+      tags: [LLM]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssistantRequest'
+            example:
+              messages:
+                - role: "user"
+                  content: "Как интерпретировать CSI?"
+              user_role: "manager"
+              current_page: "/mood"
+      responses:
+        '200':
+          description: SSE-поток с токенами ответа
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: |
+                  Поток SSE-событий формата:
+                  ```
+                  data: {"choices":[{"delta":{"content":"Привет"}}]}
+                  data: {"choices":[{"delta":{"content":"! Как"}}]}
+                  data: [DONE]
+                  ```
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /recommendations:
+    post:
+      operationId: generateRecommendations
+      summary: AI-рекомендации по развитию (AI)
+      description: |
+        Генерирует 3-5 рекомендаций на основе агрегированных метрик.
+        
+        **AI Gateway:** `POST https://ai.gateway.lovable.dev/v1/chat/completions`  
+        **Модель:** `google/gemini-3-flash-preview`  
+        **System prompt:** зависит от `scope`:
+        - `employee` — персональные рекомендации по развитию
+        - `team` — рекомендации руководителю по команде
+        - `company` — стратегические рекомендации для HR
+      tags: [LLM]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecommendationsRequest'
+            example:
+              scope: "team"
+              data_summary:
+                team_name: "Backend"
+                satisfaction_index: 72
+                engagement_score: 65
+                positive_feedback_pct: 68
+                top_issues: ["Сорвал сроки", "Не держал в курсе"]
+      responses:
+        '200':
+          description: Сгенерированные рекомендации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationsResponse'
+              example:
+                recommendations: |
+                  1. **Улучшить коммуникацию по срокам** — внедрить ежедневные стендапы...
+                  2. **Проводить ретроспективы** — раз в 2 недели...
+                generated_at: "2026-03-02T10:00:00.000Z"
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /admin-users:
+    post:
+      operationId: adminUsers
+      summary: Управление пользователями
+      description: |
+        Создание и деактивация пользователей. Требуется роль `admin`.
+        Авторизация проверяется через JWT в заголовке.
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/AdminCreateUser'
+                - $ref: '#/components/schemas/AdminDeleteUser'
+            examples:
+              create:
+                summary: Создать пользователя
+                value:
+                  action: "create"
+                  email: "new@company.com"
+                  full_name: "Иван Новичков"
+                  role: "employee"
+                  team_id: "uuid-team-id"
+              delete:
+                summary: Деактивировать пользователя
+                value:
+                  action: "delete"
+                  user_id: "uuid-user-id"
+      responses:
+        '200':
+          description: Успешное действие
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/AdminCreateResponse'
+                  - $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Ошибка валидации / попытка удалить себя / последний admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden — не admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /generate-360-assignments:
+    post:
+      operationId: generate360Assignments
+      summary: Автогенерация назначений 360-ревью
+      description: |
+        Алгоритм распределения рецензентов для цикла 360-ревью.
+        Учитывает: команды, историю взаимодействий, предыдущие пары.
+        Scoring: бонус за одну команду (+30), взаимодействия (+5 × count),
+        штраф за повторную пару (−20), базовый random.
+      tags: [Review 360]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cycleId]
+              properties:
+                cycleId:
+                  type: string
+                  format: uuid
+                  description: ID цикла 360-ревью
+      responses:
+        '200':
+          description: Назначения созданы
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  assignments_created:
+                    type: integer
+                  users_count:
+                    type: integer
+        '400':
+          description: Ошибка (цикл не найден, мало пользователей)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /survey-cron:
+    post:
+      operationId: surveyCron
+      summary: Автоматизация опросов (CRON)
+      description: |
+        Фоновая задача для автоматического управления опросами:
+        1. Создаёт полугодовой цикл (half_year_employee) если наступил период
+        2. Создаёт двухмесячный дневник руководителя (bi_month_manager)
+        3. Помечает просроченные назначения как `overdue`
+        
+        Предполагается вызов по расписанию (cron) или вручную.
+      tags: [Surveys]
+      security: []
+      responses:
+        '200':
+          description: Cron выполнен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  timestamp:
+                    type: string
+                    format: date-time
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /top-kudos:
+    get:
+      operationId: topKudos
+      summary: Топ получателей благодарностей
+      description: |
+        Возвращает топ-N пользователей по количеству полученных kudos за период.
+        Поддерживает фильтрацию по команде.
+      tags: [Kudos]
+      security: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: ["7d", "30d", "90d"]
+            default: "30d"
+          description: Период выборки
+        - name: teamId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Фильтр по команде
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          description: Количество записей
+      responses:
+        '200':
+          description: Топ получателей
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopKudosResponse'
+              example:
+                data:
+                  - name: "Анна Разработчик"
+                    count: 12
+                    topCategory: "helped_understand"
+                  - name: "Дмитрий Фронтенд"
+                    count: 8
+                    topCategory: "team_support"
+                period: "30d"
+                total: 45
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /seed-data:
+    post:
+      operationId: seedData
+      summary: Наполнение демо-данными
+      description: |
+        Создаёт демо-набор: 36 пользователей, 5 команд, 25+ эпизодов,
+        250+ отзывов, 100+ kudos, 2 цикла 360, опросы.
+        **Только для разработки!**
+      tags: [Seed]
+      security: []
+      responses:
+        '200':
+          description: Данные созданы
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  stats:
+                    type: object
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase JWT-токен пользователя
+
+  responses:
+    RateLimited:
+      description: Слишком много запросов к AI Gateway
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Слишком много запросов, попробуйте позже"
+    PaymentRequired:
+      description: Недостаточно средств на AI Gateway
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Требуется пополнение баланса AI"
+    InternalError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+
+    # ── process-text ──
+    ProcessTextRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          description: Текст для обработки
+        context:
+          type: string
+          enum: [feedback, critical, kudos, survey, manager-diary]
+          default: feedback
+          description: |
+            Контекст модерации, определяет system prompt:
+            - `feedback` — стандартная модерация отзыва
+            - `critical` — серьёзный инцидент (сохраняет юридическую точность)
+            - `kudos` — благодарность (подчёркивает позитив)
+            - `survey` — опрос (структурирует текст)
+            - `manager-diary` — дневник руководителя
+
+    ProcessTextResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [OK, INVALID]
+          description: OK = текст осмысленный, INVALID = спам/бессмыслица
+        processed_text:
+          type: string
+          description: Обработанный текст
+        toxicity_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: "0 = чисто, 1 = крайне токсично"
+        was_modified:
+          type: boolean
+          description: Был ли текст изменён
+
+    # ── assistant ──
+    AssistantRequest:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+          description: История сообщений чата
+        user_role:
+          type: string
+          enum: [employee, manager, hr, admin]
+          default: employee
+          description: Роль текущего пользователя (влияет на ограничения ответов)
+        current_page:
+          type: string
+          description: Текущий маршрут пользователя (влияет на контекст)
+          example: "/mood"
+
+    ChatMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+
+    # ── recommendations ──
+    RecommendationsRequest:
+      type: object
+      required: [scope, data_summary]
+      properties:
+        scope:
+          type: string
+          enum: [employee, team, company]
+          description: |
+            Уровень рекомендаций:
+            - `employee` — персональные для сотрудника
+            - `team` — для руководителя команды
+            - `company` — стратегические для HR/руководства
+        data_summary:
+          type: object
+          additionalProperties: true
+          description: Агрегированные метрики (произвольная структура)
+
+    RecommendationsResponse:
+      type: object
+      properties:
+        recommendations:
+          type: string
+          description: Пронумерованный список рекомендаций (markdown)
+        generated_at:
+          type: string
+          format: date-time
+
+    # ── admin-users ──
+    AdminCreateUser:
+      type: object
+      required: [action, email, full_name, role]
+      properties:
+        action:
+          type: string
+          enum: [create]
+        email:
+          type: string
+          format: email
+        full_name:
+          type: string
+        role:
+          type: string
+          enum: [employee, manager, hr, admin]
+        team_id:
+          type: string
+          format: uuid
+
+    AdminDeleteUser:
+      type: object
+      required: [action, user_id]
+      properties:
+        action:
+          type: string
+          enum: [delete]
+        user_id:
+          type: string
+          format: uuid
+
+    AdminCreateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        user_id:
+          type: string
+          format: uuid
+        temp_password:
+          type: string
+          description: Временный пароль (показать один раз!)
+
+    # ── top-kudos ──
+    TopKudosResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              count:
+                type: integer
+              topCategory:
+                type: string
+                enum: [helped_understand, emotional_support, saved_deadline, shared_expertise, mentoring, team_support]
+        period:
+          type: string
+        total:
+          type: integer
