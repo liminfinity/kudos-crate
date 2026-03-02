@@ -5,6 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const LLM_BASE_URL = "http://84.54.30.173:8000";
+
 const PAGE_CONTEXT: Record<string, string> = {
   "/feedback/new": "Пользователь на странице создания отзыва. Помоги составить конструктивный отзыв. Объясни, что текст будет автоматически проверен на орфографию и тон.",
   "/kudos/new": "Пользователь на странице Благодарностей. Помоги выразить признательность коллеге.",
@@ -37,9 +39,6 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
     const { messages, user_role, current_page } = await req.json();
 
     const pageContext = PAGE_CONTEXT[current_page] || "Пользователь на неизвестной странице.";
@@ -61,42 +60,33 @@ ${roleRestriction}
 - Объясняй метрики простым языком
 - Если пользователь спрашивает о функциях, к которым у него нет доступа, вежливо объясни, что эта функция доступна для другой роли`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Build a single prompt from system + chat messages
+    const chatHistory = (messages || [])
+      .map((m: { role: string; content: string }) => `${m.role === "user" ? "Пользователь" : "Ассистент"}: ${m.content}`)
+      .join("\n");
+
+    const prompt = `${systemPrompt}\n\n${chatHistory ? `История диалога:\n${chatHistory}\n\n` : ""}Ответь на последнее сообщение пользователя.`;
+
+    const response = await fetch(`${LLM_BASE_URL}/ask`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...(messages || []),
-        ],
-        stream: true,
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Слишком много запросов, попробуйте позже" }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Требуется пополнение баланса AI" }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
+      console.error("LLM API error:", response.status, t);
       return new Response(JSON.stringify({ error: "Ошибка AI-ассистента" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+    const data = await response.json();
+    const text = data.answer || data.response || data.text || data.content || data.result || "Нет ответа";
+
+    // Return as a non-streaming JSON response
+    return new Response(JSON.stringify({ choices: [{ message: { content: text } }] }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("assistant error:", e);
